@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/logo.png" alt="FlowSpec" width="160" />
+</p>
+
 # FlowSpec
 
 A declarative, engine-agnostic specification language for AI-driven acceptance testing, plus the site that documents it.
