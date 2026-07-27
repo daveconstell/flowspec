@@ -100,6 +100,21 @@ Assertions accept optional `description` (failure message) and `timeout` (retry-
 }
 ```
 
+## Where results land
+
+Runs write to `flowspec-results/` (overridable), overwriting the previous run:
+
+```
+flowspec-results/
+├── report.json                 # nested run → flows → cases → steps + assertions
+├── report.xml                  # optional JUnit, for CI
+└── evidence/<flow-id>/<case-id>/screenshot.png
+```
+
+- Evidence paths in `report.json` are **relative** to the results directory, so the whole folder zips and uploads as a self-contained bundle.
+- A case's stable identity across runs is `<flow-id>/<case-id>` — use it to correlate flaky results.
+- Exit codes: `0` passed · `1` a flow failed (product bug) · `2` a flow errored or the document was invalid (broken run).
+
 ## Review checklist
 
 - `spec` and `name` present; every flow/case has a unique kebab-case `id`.

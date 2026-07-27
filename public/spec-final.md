@@ -44,7 +44,7 @@ An implementation is a **conformant execution engine** if it:
 2. executes the lifecycle defined in §12,
 3. resolves targets as defined in §6,
 4. supports all built-in actions (§7) and assertion types (§8), and
-5. produces a report as defined in §13.
+5. produces a report as defined in §13, written as defined in §14.
 
 An engine that encounters an unknown action or assertion type **MUST** fail the containing case with status `error` — it **MUST NOT** silently skip it.
 
@@ -430,6 +430,7 @@ Failure semantics, in one place:
 | Situation | Result |
 |---|---|
 | Undefined variable, invalid schema, cyclic graph | Document rejected at load; nothing runs. |
+| Setup step fails | Flow preconditions unmet; all its cases `skipped`, flow = `error`. Cleanup still runs. |
 | Step fails (target missing, timeout) | Remaining steps and assertions in the case are skipped; case = `error`. |
 | Assertion fails | Remaining assertions still evaluated; case = `failed`. |
 | Case fails/errors, no matching edge | Downstream cases `skipped`; flow = case's outcome. |
@@ -481,7 +482,7 @@ An execution produces a JSON report:
               "status": "passed"
             }
           ],
-          "evidence": { "screenshot": "artifacts/request-quote/submit.png" }
+          "evidence": { "screenshot": "evidence/request-quote/submit/screenshot.png" }
         }
       ]
     }
@@ -491,7 +492,7 @@ An execution produces a JSON report:
 
 - `status` at every level is `passed` | `failed` | `error` | `skipped`. A parent's status is the worst of its children (`error` > `failed` > `passed`; `skipped` children don't degrade a parent).
 - Durations are seconds.
-- `evidence` maps each collected artifact to a path or URI.
+- `evidence` maps each collected artifact to a path relative to the results directory (§14.3).
 - Engines **MAY** add engine-specific fields; consumers **MUST** ignore fields they don't recognize.
 
 ### 13.1 Human-readable output
@@ -506,7 +507,91 @@ A reader who has never opened the FlowSpec document **SHOULD** be able to unders
 
 ---
 
-## 14. Versioning and extensibility
+## 14. Results output
+
+§13 defines the *shape* of a result. This section defines *where* it lands, so that CI pipelines, dashboards, and flake trackers work against any conformant engine rather than being rewritten per engine.
+
+### 14.1 Directory layout
+
+Engines write results to a single **results directory**, which **SHOULD** default to `flowspec-results/` and **MUST** be overridable by the user:
+
+```
+flowspec-results/
+├── report.json                              # the report defined in §13
+├── report.xml                               # optional JUnit XML (§14.4)
+└── evidence/
+    └── <flow-id>/
+        ├── _setup/                          # evidence from setup steps, if any
+        │   └── screenshot.png
+        └── <case-id>/
+            ├── screenshot.png
+            ├── dom.html
+            └── console.log
+```
+
+Rules:
+
+- Engines **MUST NOT** write outside the results directory.
+- The directory **MUST** be safe to delete and regenerate: a run **MUST NOT** depend on artifacts from a previous run.
+- A run **MUST** overwrite the previous run's results rather than accumulating timestamped directories. Archiving history is CI's job, not the engine's.
+
+Artifact filenames need no counters or hashes because a case is visited at most once per run — the acyclicity requirement of §10.3 guarantees `evidence/<flow-id>/<case-id>/` is collision-free.
+
+### 14.2 Artifact filenames
+
+| Evidence | Filename |
+|---|---|
+| `screenshot` | `screenshot.png` |
+| `dom` | `dom.html` |
+| `html` | `page.html` |
+| `a11y-tree` | `a11y-tree.json` |
+| `network` | `network.json` |
+| `console` | `console.log` |
+| `reasoning` | `reasoning.md` |
+| `performance` | `performance.json` |
+
+### 14.3 Path references and portability
+
+Evidence paths in `report.json` **MUST** be relative to the results directory:
+
+```json
+{ "evidence": { "screenshot": "evidence/request-quote/submit/screenshot.png" } }
+```
+
+Absolute paths **MUST NOT** be used. This is what makes the results directory a self-contained bundle: it can be zipped, uploaded as a CI artifact, or attached to a pull request, and every reference still resolves.
+
+Engines that upload evidence to remote storage **MAY** instead emit absolute `https:` URIs. A report **MUST NOT** mix the two styles.
+
+### 14.4 Case identity and CI integration
+
+A case's **fully-qualified id** is `<flow-id>/<case-id>` — for example `request-quote/submit`. It is stable across runs and is the key that flake trackers and history dashboards **SHOULD** use to correlate a case with its previous results.
+
+Engines **SHOULD** additionally emit JUnit XML as `report.xml`, since it is the format CI systems already understand:
+
+| JUnit | FlowSpec |
+|---|---|
+| `<testsuite name>` | Flow `name`, falling back to `id` |
+| `<testcase classname>` | Flow `id` |
+| `<testcase name>` | Case `name`, falling back to `id` |
+| `<failure message>` | The failed assertion's `description` (§13.1) |
+| `<error message>` | The failing step's `description` and reason |
+| `<skipped>` | Cases with status `skipped` |
+
+### 14.5 Exit codes
+
+A conformant runner **MUST** exit with:
+
+| Code | Meaning |
+|---|---|
+| `0` | Every flow passed. |
+| `1` | At least one flow failed — the application under test did not meet expectations. |
+| `2` | At least one flow errored, or the document was invalid — the run itself did not complete. |
+
+The distinction between `1` and `2` matters in CI: `1` is a product bug, `2` is a broken test run or environment, and pipelines usually treat them differently.
+
+---
+
+## 15. Versioning and extensibility
 
 - The `spec` field uses `major.minor`. Minor versions are backward compatible; engines supporting `1.x` **MUST** accept any `1.y ≤ x` document.
 - Unknown *document* fields are reserved: engines **MUST** ignore unrecognized top-level and object-level fields (forward compatibility), but **MUST** reject unknown `action` and assertion `type` values (§2).
@@ -515,7 +600,7 @@ Candidate features deliberately **out of scope** for 1.0: loops, parallel execut
 
 ---
 
-## 15. Complete example
+## 16. Complete example
 
 ```json
 {

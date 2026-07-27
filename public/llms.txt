@@ -13,6 +13,7 @@ Key facts:
 - Case outcomes: passed, failed (assertion), error (step could not execute), skipped (never reached).
 - `description` is optional on cases, steps, and assertions and states intent, never mechanics; engines carry it into reports, where an assertion's description becomes its failure message.
 - On any failure, engines must capture at least a screenshot and console log.
+- Results are written to `flowspec-results/` — `report.json`, optional JUnit `report.xml`, and `evidence/<flow-id>/<case-id>/` artifacts referenced by relative path. Exit codes: 0 passed, 1 failed, 2 errored or invalid document.
 
 ## Docs
 
