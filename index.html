@@ -160,7 +160,7 @@
         </div>
         <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
           <h3 class="font-semibold">Semantic</h3>
-          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Stable component names via <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">data-constell</code> — never CSS or XPath.</p>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Stable component names via a data attribute you choose — never CSS or XPath.</p>
         </div>
         <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
           <h3 class="font-semibold">Human readable</h3>
@@ -203,10 +203,12 @@
             <div>
               <h3 class="text-lg font-semibold">Annotate your components</h3>
               <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Add a <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">data-constell</code>
-                attribute to every element a test needs to reach. Name components by role, not
-                appearance, so the name survives a redesign. This is the only change FlowSpec asks
-                of your application.
+                Add a data attribute to every element a test needs to reach, naming components by
+                role rather than appearance so the name survives a redesign. Already using
+                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">data-testid</code>
+                or a house convention? Declare it as
+                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targetAttribute</code>
+                and change no markup at all.
               </p>
             </div>
             <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">&lt;!-- role, not appearance --&gt;</span>
@@ -215,7 +217,10 @@
   &lt;button <span class="text-sky-400">data-constell</span>=<span class="text-emerald-400">"quote-submit"</span>&gt;
     Request a quote
   &lt;/button&gt;
-&lt;/form&gt;</code></pre>
+&lt;/form&gt;
+
+<span class="text-zinc-500">// …or keep the attribute you already use:</span>
+<span class="text-sky-400">"targetAttribute"</span>: <span class="text-emerald-400">"data-testid"</span></code></pre>
           </li>
 
           <!-- 2 -->
@@ -266,9 +271,10 @@
                 that maps actions onto Playwright.
               </p>
             </div>
-            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500"># a Playwright adapter is ~40 lines:</span>
-<span class="text-zinc-500"># resolve the target…</span>
-page.locator(<span class="text-emerald-400">`[data-constell="${step.target}"]`</span>)
+            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">// a Playwright adapter is ~40 lines:</span>
+<span class="text-zinc-500">// resolve the target…</span>
+<span class="text-violet-400">const</span> attr = doc.targetAttribute ?? <span class="text-emerald-400">'data-constell'</span>
+page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
 
 <span class="text-zinc-500"># …then dispatch on the action</span>
 <span class="text-violet-400">switch</span> (step.action) {

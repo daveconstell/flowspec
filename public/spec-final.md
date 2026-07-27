@@ -26,7 +26,7 @@ An **execution engine** — an AI browser agent, a Playwright adapter, a Seleniu
 | Principle | Meaning |
 |---|---|
 | **Declarative** | Describes *what* should happen, never *how*. |
-| **Semantic** | Targets are stable component names, never CSS selectors or XPath. |
+| **Semantic** | Targets are stable component names carried by a data attribute, never CSS selectors or XPath. |
 | **Human readable** | A QA engineer can read and write a FlowSpec without programming knowledge. |
 | **AI readable** | An LLM can execute a FlowSpec without additional prompting. |
 | **Engine agnostic** | The same document runs on any conformant engine. |
@@ -64,6 +64,7 @@ A FlowSpec document is a single JSON object (UTF-8). The recommended file extens
   "version": "1.0.0",
   "author": "Constell",
   "tags": ["smoke", "production"],
+  "targetAttribute": "data-constell",
   "variables": {},
   "setup": [],
   "flows": [],
@@ -80,6 +81,7 @@ A FlowSpec document is a single JSON object (UTF-8). The recommended file extens
 | `version` | string | no | Document version (semver recommended). |
 | `author` | string | no | Author or team. |
 | `tags` | string[] | no | Labels for filtering (`smoke`, `regression`, …). |
+| `targetAttribute` | string | no | HTML attribute that carries component names. Default `data-constell` (§6.1). |
 | `variables` | object | no | Reusable values (§5). |
 | `setup` | Step[] | no | Runs before **each** flow (§11). |
 | `cleanup` | Step[] | no | Runs after **each** flow (§11). |
@@ -127,7 +129,7 @@ Any string value in the document may reference a variable with `{{name}}`:
 
 A **target** is the stable, semantic name of a UI component. Targets decouple the spec from markup: names survive redesigns; selectors do not.
 
-Components under test declare their name with the `data-constell` attribute:
+Components under test declare their name with a **target attribute**:
 
 ```html
 <button data-constell="quote-submit">Request a quote</button>
@@ -139,14 +141,40 @@ FlowSpec references it by name only:
 { "action": "click", "target": "quote-submit" }
 ```
 
-### 6.1 Resolution
+### 6.1 The target attribute
 
-- DOM-based engines **MUST** resolve `target: "X"` to `[data-constell="X"]`.
-- Non-DOM engines (mobile, desktop) **MUST** map the same names onto their platform's semantic identifiers (e.g. accessibility IDs).
+The attribute name is a property of the application under test, not of the journey being described, so documents declare it once at the top level:
+
+```json
+{
+  "spec": "1.0",
+  "name": "Venue Landing Page",
+  "targetAttribute": "data-testid"
+}
+```
+
+| | |
+|---|---|
+| **Field** | `targetAttribute` (string, optional) |
+| **Default** | `data-constell` |
+| **Constraint** | **MUST** be a valid HTML attribute name matching `^[A-Za-z][A-Za-z0-9_.:-]*$`. Engines **MUST** reject an invalid value at load time. |
+
+Rules:
+
+- Teams already using `data-testid`, `data-qa`, `data-test`, or a house convention adopt FlowSpec by declaring it — no markup migration required.
+- A custom attribute **SHOULD** be `data-*` prefixed, so it stays a valid HTML5 custom attribute.
+- Exactly one attribute applies per document. Fallback chains are deliberately excluded: two ways to name the same component is how a test suite starts drifting from its markup.
+- Engines **MAY** allow the value to be overridden at invocation time (CLI flag, config), which takes precedence over the document. This mirrors variable overrides (§5) and lets one document run against environments whose markup differs.
+- The attribute name is meaningless to non-DOM engines (§6.2), which ignore it.
+
+### 6.2 Resolution
+
+- DOM-based engines **MUST** resolve `target: "X"` to `[<targetAttribute>="X"]` — by default `[data-constell="X"]`.
+- Non-DOM engines (mobile, desktop) **MUST** map the same names onto their platform's semantic identifiers (e.g. accessibility IDs), ignoring `targetAttribute`.
 - If a target resolves to zero elements, the step or assertion referencing it fails.
 - If a target resolves to multiple elements, engines **MUST** fail with an ambiguity error unless the assertion is `count` (§8), which operates on the full match set.
 
-### 6.2 Naming convention
+### 6.3 Naming convention
 
 Names **SHOULD** be lowercase kebab-case, describe the component's *role* rather than its appearance, and remain stable across UI redesigns:
 
@@ -416,7 +444,7 @@ Flows **MUST** be independent: engines **MAY** run them in any order, and a flow
 ## 12. Execution lifecycle
 
 ```
-Load & validate document          (schema, variables, graph integrity)
+Load & validate document          (schema, variables, targetAttribute, graph integrity)
 └─ for each flow:
    ├─ Run setup
    ├─ Execute cases along the graph (§10.3)
@@ -429,7 +457,7 @@ Failure semantics, in one place:
 
 | Situation | Result |
 |---|---|
-| Undefined variable, invalid schema, cyclic graph | Document rejected at load; nothing runs. |
+| Undefined variable, invalid schema, cyclic graph, invalid `targetAttribute` | Document rejected at load; nothing runs. |
 | Setup step fails | Flow preconditions unmet; all its cases `skipped`, flow = `error`. Cleanup still runs. |
 | Step fails (target missing, timeout) | Remaining steps and assertions in the case are skipped; case = `error`. |
 | Assertion fails | Remaining assertions still evaluated; case = `failed`. |

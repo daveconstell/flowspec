@@ -13,6 +13,7 @@ A FlowSpec document is a single JSON object (`.flowspec.json`) describing user j
 {
   "spec": "1.0",
   "name": "Suite name",
+  "targetAttribute": "data-testid",
   "variables": { "email": "john@example.com" },
   "setup":   [ { "action": "navigate", "url": "/page" } ],
   "flows":   [ { "id": "flow-id", "cases": [] } ],
@@ -20,11 +21,12 @@ A FlowSpec document is a single JSON object (`.flowspec.json`) describing user j
 }
 ```
 
-Required: `spec`, `name`, `flows`. Setup/cleanup run before/after **each** flow; flows must be independent.
+Required: `spec`, `name`, `flows`. `targetAttribute` is optional and defaults to `data-constell`. Setup/cleanup run before/after **each** flow; flows must be independent.
 
 ## Rules
 
-1. **Targets are semantic names**, matching `data-constell` attributes: `"target": "quote-submit"` → `[data-constell="quote-submit"]`. Never CSS or XPath. Lowercase kebab-case, named by role, stable across redesigns.
+1. **Targets are semantic names** carried by a data attribute: `"target": "quote-submit"` → `[data-constell="quote-submit"]`. Never CSS or XPath. Lowercase kebab-case, named by role, stable across redesigns.
+   The attribute defaults to `data-constell`; set the document's top-level `targetAttribute` to match an existing convention (`data-testid`, `data-qa`, …) instead of migrating markup. One attribute per document — no fallback chains.
 2. **Variables** interpolate with `{{name}}`. Referencing an undefined variable fails at load.
 3. **Cases run in array order** (linear chain) unless the flow declares `edges`. Execution stops at the first non-passing case; the rest are `skipped`.
 4. **Branching:** `{ "from": "submit", "to": "validation-error", "when": "failed", "label": "invalid email" }` — a `when: "failed"` edge makes the failure *expected*; if that path passes, the flow passes. `label` is what diagrams show. Graph must be acyclic.

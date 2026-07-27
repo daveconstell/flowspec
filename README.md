@@ -18,7 +18,7 @@ A FlowSpec document describes user journeys — flows, checkpoints, semantic int
 
 FlowSpec is a specification, not a test runner — there is no reference implementation yet. To adopt it:
 
-1. **Annotate your UI.** Add `data-constell="component-name"` to every element a test must reach. Name by role, not appearance.
+1. **Annotate your UI.** Add `data-constell="component-name"` to every element a test must reach. Name by role, not appearance. Already using `data-testid` or another convention? Set the document's `targetAttribute` instead of migrating markup.
 2. **Author a document.** Write a `.flowspec.json` file describing the journey. See §16 of the spec for a complete example.
 3. **Run it.** Give an AI coding agent `SKILL.md` plus your document, or write a thin adapter mapping FlowSpec actions onto Playwright/Selenium.
 4. **Consume the results.** Conformant engines write `flowspec-results/` — `report.json`, optional JUnit `report.xml`, and evidence artifacts referenced by relative path. Exit `0` passed, `1` failed, `2` errored.
