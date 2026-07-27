@@ -56,6 +56,7 @@
           FlowSpec
         </a>
         <div class="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <a href="#results" class="hidden rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 sm:block dark:hover:bg-zinc-900 dark:hover:text-zinc-100">Results</a>
           <a href="#spec" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">Specification</a>
           <a href="/SKILL.md" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">SKILL.md</a>
           <a href="/llms.txt" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">llms.txt</a>
@@ -179,6 +180,95 @@
       </div>
     </section>
 
+    <!-- results -->
+    <section id="results" class="mx-auto max-w-5xl scroll-mt-20 px-6 py-20">
+      <div class="max-w-2xl">
+        <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400">§13 – §14</span>
+        <h2 class="mt-2 text-3xl font-semibold tracking-tight text-balance">
+          Results are part of the specification
+        </h2>
+        <p class="mt-4 text-pretty text-zinc-600 dark:text-zinc-400">
+          A test format is only portable if its output is too. FlowSpec defines not just the shape
+          of a result but where it lands — so a CI pipeline, dashboard, or flake tracker works
+          against any conformant engine instead of being rewritten for each one.
+        </p>
+      </div>
+
+      <div class="mt-10 grid gap-6 lg:grid-cols-2">
+        <!-- layout -->
+        <div class="rounded-xl border border-zinc-200 bg-zinc-900 dark:border-zinc-800">
+          <div class="border-b border-zinc-800 px-5 py-3 font-mono text-xs text-zinc-500">
+            flowspec-results/
+          </div>
+          <pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed text-zinc-300"><code>flowspec-results/
+├── <span class="text-sky-400">report.json</span>        <span class="text-zinc-500"># the full result tree</span>
+├── <span class="text-sky-400">report.xml</span>         <span class="text-zinc-500"># optional JUnit, for CI</span>
+└── evidence/
+    └── request-quote/
+        └── submit/
+            ├── <span class="text-emerald-400">screenshot.png</span>
+            ├── <span class="text-emerald-400">dom.html</span>
+            └── <span class="text-emerald-400">console.log</span></code></pre>
+        </div>
+
+        <!-- guarantees -->
+        <div class="flex flex-col gap-4">
+          <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+            <h3 class="font-semibold">Self-contained bundles</h3>
+            <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+              Evidence is referenced by relative path, so the results directory zips, uploads as a
+              CI artifact, or attaches to a pull request with every link intact.
+            </p>
+          </div>
+          <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+            <h3 class="font-semibold">Stable identity</h3>
+            <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+              Every case has a fully-qualified id —
+              <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">flow-id/case-id</code>
+              — that holds across runs, so flakiness can be tracked over time.
+            </p>
+          </div>
+          <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+            <h3 class="font-semibold">Readable failures</h3>
+            <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+              Names and descriptions carry into the report, so a failure reads
+              <em>“The confirmation banner appears — failed”</em>, not
+              <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">visible: success-message</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- exit codes -->
+      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <div class="flex items-center gap-2">
+            <span class="size-2 rounded-full bg-emerald-500"></span>
+            <span class="font-mono text-sm font-semibold">exit 0</span>
+          </div>
+          <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Every flow passed.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <div class="flex items-center gap-2">
+            <span class="size-2 rounded-full bg-amber-500"></span>
+            <span class="font-mono text-sm font-semibold">exit 1</span>
+          </div>
+          <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            A flow failed — a product bug.
+          </p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <div class="flex items-center gap-2">
+            <span class="size-2 rounded-full bg-red-500"></span>
+            <span class="font-mono text-sm font-semibold">exit 2</span>
+          </div>
+          <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            A flow errored or the document was invalid — a broken run.
+          </p>
+        </div>
+      </div>
+    </section>
+
     <!-- spec -->
     <section class="mx-auto max-w-3xl px-6 py-16">
       <div class="mb-10 border-b border-zinc-200 pb-6 dark:border-zinc-800">
@@ -188,7 +278,7 @@
           <a href="/spec-final.md" class="underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-500 dark:decoration-zinc-700">raw markdown</a>.
         </p>
       </div>
-      <article id="spec"></article>
+      <article id="spec" class="scroll-mt-20"></article>
     </section>
 
     <!-- footer -->
