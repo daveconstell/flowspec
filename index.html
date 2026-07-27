@@ -56,6 +56,7 @@
           FlowSpec
         </a>
         <div class="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <a href="#start" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">Get started</a>
           <a href="#results" class="hidden rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 sm:block dark:hover:bg-zinc-900 dark:hover:text-zinc-100">Results</a>
           <a href="#spec" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">Specification</a>
           <a href="/SKILL.md" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">SKILL.md</a>
@@ -105,10 +106,10 @@
               Download SKILL.md
             </a>
             <a
-              href="#spec"
+              href="#start"
               class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-5 py-2.5 text-sm font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
             >
-              Read the spec
+              Get started
               <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25 12 15.75 4.5 8.25" />
               </svg>
@@ -177,6 +178,127 @@
           <h3 class="font-semibold">Versioned</h3>
           <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Every document declares the spec version it targets.</p>
         </div>
+      </div>
+    </section>
+
+    <!-- getting started -->
+    <section id="start" class="scroll-mt-20 border-y border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/30">
+      <div class="mx-auto max-w-5xl px-6 py-20">
+        <div class="max-w-2xl">
+          <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400">Getting started</span>
+          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-balance">
+            Four steps to your first flow
+          </h2>
+          <p class="mt-4 text-pretty text-zinc-600 dark:text-zinc-400">
+            FlowSpec is a specification, not a test runner. You annotate your UI, author a
+            document, and point an execution engine at it — the engine decides how to drive the
+            browser.
+          </p>
+        </div>
+
+        <ol class="mt-12 space-y-10">
+          <!-- 1 -->
+          <li class="grid gap-6 lg:grid-cols-[3rem_1fr_1.1fr] lg:gap-8">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full border border-zinc-300 font-mono text-sm font-semibold dark:border-zinc-700">1</span>
+            <div>
+              <h3 class="text-lg font-semibold">Annotate your components</h3>
+              <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                Add a <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">data-constell</code>
+                attribute to every element a test needs to reach. Name components by role, not
+                appearance, so the name survives a redesign. This is the only change FlowSpec asks
+                of your application.
+              </p>
+            </div>
+            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">&lt;!-- role, not appearance --&gt;</span>
+&lt;form <span class="text-sky-400">data-constell</span>=<span class="text-emerald-400">"quote-form"</span>&gt;
+  &lt;input <span class="text-sky-400">data-constell</span>=<span class="text-emerald-400">"quote-email"</span> /&gt;
+  &lt;button <span class="text-sky-400">data-constell</span>=<span class="text-emerald-400">"quote-submit"</span>&gt;
+    Request a quote
+  &lt;/button&gt;
+&lt;/form&gt;</code></pre>
+          </li>
+
+          <!-- 2 -->
+          <li class="grid gap-6 lg:grid-cols-[3rem_1fr_1.1fr] lg:gap-8">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full border border-zinc-300 font-mono text-sm font-semibold dark:border-zinc-700">2</span>
+            <div>
+              <h3 class="text-lg font-semibold">Write the document</h3>
+              <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                Create a <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>
+                file. Describe the journey as flows and cases — what the user does and what should
+                be true afterwards. Never how to click it.
+              </p>
+            </div>
+            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code>{
+  <span class="text-sky-400">"spec"</span>: <span class="text-emerald-400">"1.0"</span>,
+  <span class="text-sky-400">"name"</span>: <span class="text-emerald-400">"Quote requests"</span>,
+  <span class="text-sky-400">"setup"</span>: [
+    { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"navigate"</span>, <span class="text-sky-400">"url"</span>: <span class="text-emerald-400">"/birthday"</span> }
+  ],
+  <span class="text-sky-400">"flows"</span>: [{
+    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"request-quote"</span>,
+    <span class="text-sky-400">"cases"</span>: [{
+      <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"submit"</span>,
+      <span class="text-sky-400">"steps"</span>: [
+        { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"click"</span>,
+          <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"quote-submit"</span> }
+      ],
+      <span class="text-sky-400">"assertions"</span>: [
+        { <span class="text-sky-400">"type"</span>: <span class="text-emerald-400">"visible"</span>,
+          <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"success-message"</span>,
+          <span class="text-sky-400">"description"</span>: <span class="text-emerald-400">"Confirmation shows"</span> }
+      ]
+    }]
+  }]
+}</code></pre>
+          </li>
+
+          <!-- 3 -->
+          <li class="grid gap-6 lg:grid-cols-[3rem_1fr_1.1fr] lg:gap-8">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full border border-zinc-300 font-mono text-sm font-semibold dark:border-zinc-700">3</span>
+            <div>
+              <h3 class="text-lg font-semibold">Point an engine at it</h3>
+              <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                There is no official runner yet — FlowSpec 1.0 defines the contract, and engines
+                implement it. Give an AI coding agent the
+                <a href="/SKILL.md" class="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 dark:text-zinc-300 dark:decoration-zinc-600">SKILL.md</a>
+                and your document and it can execute the journey directly, or write a thin adapter
+                that maps actions onto Playwright.
+              </p>
+            </div>
+            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500"># a Playwright adapter is ~40 lines:</span>
+<span class="text-zinc-500"># resolve the target…</span>
+page.locator(<span class="text-emerald-400">`[data-constell="${step.target}"]`</span>)
+
+<span class="text-zinc-500"># …then dispatch on the action</span>
+<span class="text-violet-400">switch</span> (step.action) {
+  <span class="text-violet-400">case</span> <span class="text-emerald-400">'click'</span>:  <span class="text-violet-400">await</span> el.click()
+  <span class="text-violet-400">case</span> <span class="text-emerald-400">'fill'</span>:   <span class="text-violet-400">await</span> el.fill(value)
+  <span class="text-violet-400">case</span> <span class="text-emerald-400">'submit'</span>: <span class="text-violet-400">await</span> el.press(<span class="text-emerald-400">'Enter'</span>)
+}</code></pre>
+          </li>
+
+          <!-- 4 -->
+          <li class="grid gap-6 lg:grid-cols-[3rem_1fr_1.1fr] lg:gap-8">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full border border-zinc-300 font-mono text-sm font-semibold dark:border-zinc-700">4</span>
+            <div>
+              <h3 class="text-lg font-semibold">Consume the results</h3>
+              <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                Every conformant engine writes the same layout, so your CI config outlives your
+                choice of engine. Publish the directory as a build artifact and gate the pipeline
+                on the exit code.
+              </p>
+            </div>
+            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500"># .github/workflows/acceptance.yml</span>
+<span class="text-sky-400">- run</span>: your-engine quote.flowspec.json
+
+<span class="text-sky-400">- uses</span>: actions/upload-artifact@v4
+  <span class="text-sky-400">if</span>: always()
+  <span class="text-sky-400">with</span>:
+    <span class="text-sky-400">name</span>: acceptance-evidence
+    <span class="text-sky-400">path</span>: flowspec-results/</code></pre>
+          </li>
+        </ol>
       </div>
     </section>
 
