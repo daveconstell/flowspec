@@ -225,14 +225,11 @@
             <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
               Optional but recommended: one file, no dependencies. Drop
               <a href="/SKILL.md" class="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 dark:text-zinc-300 dark:decoration-zinc-600">SKILL.md</a>
-              into your agent's skills directory and the steps below become
+              into your agent's skills directory and every step below becomes a
               <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec</code>
-              commands —
-              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">init</code>,
-              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">new</code>,
-              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">review</code>,
-              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">run</code>.
-              Restart the session, then run <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec</code> to confirm it loaded.
+              command. Restart the session, then run
+              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec</code>
+              to confirm it loaded.
             </p>
           </div>
           <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500"># download it straight in</span>
@@ -245,6 +242,51 @@ daveconstell/flowspec/main/public/SKILL.md \
 git clone https://github.com/daveconstell/flowspec.git
 ./flowspec/install-skill.sh              <span class="text-zinc-500"># global</span>
 ./flowspec/install-skill.sh /path/to/app <span class="text-zinc-500"># project</span></code></pre>
+        </div>
+
+        <!-- skill commands -->
+        <div id="commands" class="mt-6 scroll-mt-20 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 class="text-lg font-semibold">Skill commands</h3>
+            <p class="text-sm text-zinc-500 dark:text-zinc-400">
+              A file argument defaults to every document in
+              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>
+            </p>
+          </div>
+          <dl class="mt-5 divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Report the setup state — config, documents, target attribute — and the command list. Changes nothing.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec init</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Detect <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">baseUrl</code> and <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targetAttribute</code> from the repo, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>, create <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec new &lt;page or journey&gt;</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Author a document, annotating the components it needs to reach as it goes.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec review [file]</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Check against the review checklist — unresolved targets, undeclared variables, mechanics leaking into descriptions — and fix what's unambiguous. Passing a document with no verb does the same.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec run [file] [--url X] [--headed]</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Find the browser tooling — Chrome DevTools MCP, Playwright, Cypress — drive the journey, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">flowspec-results/</code>, and report every case with expected vs. actual. Headless unless <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">--headed</code>.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec add &lt;journey&gt; &lt;file&gt;</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Add a flow or case to an existing document, matching the ids and evidence conventions already in it.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec targets [file]</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Resolve every target against the source and list the ones that match nothing. Read-only — no edits, no browser.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec spec &lt;topic&gt;</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Answer a spec question — actions, assertions, edges, evidence — without touching a file.</dd>
+            </div>
+          </dl>
         </div>
 
         <ol class="mt-12 space-y-10">
