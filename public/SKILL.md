@@ -7,6 +7,22 @@ description: Set up, author, review, and run FlowSpec documents — declarative,
 
 A FlowSpec document is a single JSON object describing user journeys, never automation. The full spec lives at [spec-final.md](https://github.com/daveconstell/flowspec/blob/main/public/spec-final.md); this is the working reference.
 
+## Commands
+
+Invoked as `/flowspec <args>`. Match the first word; anything else is treated as a description of the journey to author.
+
+| Invocation | Do this |
+|---|---|
+| `/flowspec` (no args) | Report setup state (`.flowspec.json`, `.flowspec/` documents, `targetAttribute`) and this table. Change nothing. |
+| `/flowspec init` | Bootstrap: § *Before authoring*. Detect settings, write `.flowspec.json`, create `.flowspec/`, gitignore the output dir, then ask which page the first document covers. Already set up → show the config and say so, don't overwrite. |
+| `/flowspec new <page or journey>` | Author a new document into `.flowspec/<name>.json`. Bootstrap first if unconfigured. Verify or add every target in the markup (§ *Targets must exist*). |
+| `/flowspec @doc.json` (a file, no verb) | Review it against § *Review checklist*, then apply the fixes. |
+| `/flowspec review [@doc.json]` | § *Review checklist*. No file → every document in `.flowspec/`. Report findings; apply only the unambiguous fixes. |
+| `/flowspec run [@doc.json] [--url X]` | § *Running a document* — drive it with browser tooling, write results, report in exit-code terms. No file → every document in `.flowspec/`. `--url` overrides `baseUrl`. |
+| `/flowspec add <journey> @doc.json` | Add a flow or case to an existing document, matching the ids and evidence conventions already in it. |
+| `/flowspec targets [@doc.json]` | Resolve every target against the source and list the missing ones. Read-only — no edits, no browser. |
+| `/flowspec spec <topic>` | Answer from this reference (actions, assertions, edges, evidence). No files touched. |
+
 ## Before authoring: is the project set up?
 
 `.flowspec.json` or `.flowspec/` present → read the config and author into it. Neither → bootstrap first. **Detect before asking** — most of the configuration is already sitting in the repo:

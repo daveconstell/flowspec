@@ -16,7 +16,11 @@ Key facts:
 - On any failure, engines must capture at least a screenshot and console log.
 - Results are written to `flowspec-results/` — `report.json`, optional JUnit `report.xml`, and `evidence/<flow-id>/<case-id>/` artifacts referenced by relative path. Exit codes: 0 passed, 1 failed, 2 errored or invalid document.
 
+## Install
+
+The skill is a single dependency-free Markdown file. Download it directly — `curl -fsSL https://raw.githubusercontent.com/daveconstell/flowspec/main/public/SKILL.md -o ~/.claude/skills/flowspec/SKILL.md` — or clone `https://github.com/daveconstell/flowspec.git` and run `./install-skill.sh` (no argument installs globally to `~/.claude/skills/` and `~/.agents/skills/`; pass a project path for a project-local install).
+
 ## Docs
 
 - [Full specification](/spec-final.md): the complete FlowSpec 1.0 language specification — document format, actions, assertions, evidence, graph model, execution lifecycle, reporting.
-- [Authoring skill](/SKILL.md): a condensed skill for writing valid FlowSpec documents.
+- [Authoring skill](/SKILL.md): a condensed skill for writing, reviewing, and running FlowSpec documents. Installed in an agent's skills directory it responds to `/flowspec` commands: `init` (bootstrap `.flowspec.json` and `.flowspec/`), `new <journey>` (author a document), `review [file]`, `run [file] [--url X]`, `add <journey> <file>`, `targets [file]` (resolve every target against the source), and `spec <topic>`.

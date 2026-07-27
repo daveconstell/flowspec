@@ -9,10 +9,30 @@ A FlowSpec document describes user journeys — flows, checkpoints, semantic int
 | File | Purpose |
 |---|---|
 | [`public/spec-final.md`](public/spec-final.md) | **The specification.** FlowSpec 1.0 — document format, actions, assertions, evidence, graph model, execution lifecycle, results output. |
-| [`public/SKILL.md`](public/SKILL.md) | A condensed authoring skill for AI agents. Drop it into an agent's skills directory to have it write valid FlowSpec documents. |
+| [`public/SKILL.md`](public/SKILL.md) | A condensed skill for AI agents. Drop it into an agent's skills directory — or run `./install-skill.sh` — to author, review, and run FlowSpec documents via `/flowspec` commands. |
 | [`public/llms.txt`](public/llms.txt) | Machine-readable overview for LLMs, following the llms.txt convention. |
 | `index.html` | The documentation site — renders the spec at runtime. |
 | `spec-raw.md` | The original unrefined draft, kept for provenance. |
+
+## Installing the skill
+
+One file, no dependencies. Drop it anywhere your agent reads skills from — `~/.claude/skills/` and `~/.agents/skills/` for a global install, `<project>/.claude/skills/` for one project.
+
+```bash
+# direct download
+mkdir -p ~/.claude/skills/flowspec
+curl -fsSL https://raw.githubusercontent.com/daveconstell/flowspec/main/public/SKILL.md \
+  -o ~/.claude/skills/flowspec/SKILL.md
+```
+
+```bash
+# or clone and use the installer — writes to both skill directories
+git clone https://github.com/daveconstell/flowspec.git
+./flowspec/install-skill.sh              # global (~)
+./flowspec/install-skill.sh /path/to/app # project-local
+```
+
+Restart the agent session, then `/flowspec` to confirm it loaded.
 
 ## Using FlowSpec
 
@@ -31,6 +51,19 @@ FlowSpec is a specification, not a test runner — there is no reference impleme
 
    See §3.2 of the spec for the layout and §16 for a complete document.
 3. **Run it.** Give an AI coding agent `SKILL.md` plus your document, or write a thin adapter mapping FlowSpec actions onto Playwright/Selenium.
+
+   With the skill installed (`./install-skill.sh`, or pass a project path for a local install), the agent answers to slash commands:
+
+   | Command | Does |
+   |---|---|
+   | `/flowspec` | Report setup state and the command list |
+   | `/flowspec init` | Detect `baseUrl`/`targetAttribute`, write `.flowspec.json`, create `.flowspec/` |
+   | `/flowspec new <page or journey>` | Author a document, annotating the markup as it goes |
+   | `/flowspec review [file]` | Check against the review checklist and fix what's unambiguous |
+   | `/flowspec run [file] [--url X]` | Execute the journey and write `flowspec-results/` |
+   | `/flowspec add <journey> <file>` | Add a flow or case to an existing document |
+   | `/flowspec targets [file]` | List targets that don't resolve in the source — read-only |
+   | `/flowspec spec <topic>` | Answer a spec question — actions, assertions, edges, evidence |
 4. **Consume the results.** Conformant engines write `flowspec-results/` — `report.json`, optional JUnit `report.xml`, and evidence artifacts referenced by relative path. Multi-document runs nest per document id, mirroring the `.flowspec/` tree. Exit `0` passed, `1` failed, `2` errored.
 
 ## Running the site
