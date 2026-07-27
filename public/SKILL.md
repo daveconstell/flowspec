@@ -5,7 +5,29 @@ description: Author and review FlowSpec documents — declarative, engine-agnost
 
 # Writing FlowSpec documents
 
-A FlowSpec document is a single JSON object (`.flowspec.json`) describing user journeys, never automation. The full spec lives at `/spec-final.md`; this is the working reference.
+A FlowSpec document is a single JSON object describing user journeys, never automation. The full spec lives at `/spec-final.md`; this is the working reference.
+
+## Project layout
+
+```
+.flowspec.json            # project config: baseUrl, targetAttribute, output
+.flowspec/
+├── venue-landing.json    # one document per page or area
+├── admin/users.json      # nesting allowed; id is the path minus extension
+└── fixtures/             # reserved — files for upload steps, never a document
+flowspec-results/         # generated, gitignored
+```
+
+Settings resolve **invocation → document → `.flowspec.json` → spec default**. Put `baseUrl` in the config file, not in documents: the origin changes between laptop, CI, and staging; the journey does not.
+
+```json
+{
+  "spec": "1.0",
+  "baseUrl": "http://localhost:5173",
+  "targetAttribute": "data-testid",
+  "output": "flowspec-results"
+}
+```
 
 ## Document skeleton
 
@@ -13,15 +35,30 @@ A FlowSpec document is a single JSON object (`.flowspec.json`) describing user j
 {
   "spec": "1.0",
   "name": "Suite name",
-  "targetAttribute": "data-testid",
   "variables": { "email": "john@example.com" },
-  "setup":   [ { "action": "navigate", "url": "/page" } ],
-  "flows":   [ { "id": "flow-id", "cases": [] } ],
+  "setup":   [ { "action": "navigate", "url": "/login" } ],
+  "flows": [
+    {
+      "id": "flow-id",
+      "setup": [ { "action": "navigate", "url": "/page" } ],
+      "cases": []
+    }
+  ],
   "cleanup": [ { "action": "clear-storage" } ]
 }
 ```
 
-Required: `spec`, `name`, `flows`. `targetAttribute` is optional and defaults to `data-constell`. Setup/cleanup run before/after **each** flow; flows must be independent.
+Required: `spec`, `name`, `flows`. Flows must be independent — engines may run them in any order.
+
+**Setup/cleanup exist at two levels**, which is how one suite covers many pages:
+
+```
+document setup → flow setup → cases → flow cleanup → document cleanup
+```
+
+Document setup holds what every flow needs (sign in, seed data); flow setup holds what only that journey needs, usually the page it starts on. A failing setup step at either level makes the flow `error`, not `failed` — a precondition problem is not a product bug.
+
+Within a flow, `navigate` is an ordinary step, so a single journey can cross as many pages as it likes.
 
 ## Rules
 
@@ -51,11 +88,11 @@ Names default to `id` when absent. Engines carry names and descriptions through 
 
 | Action | Required fields |
 |---|---|
-| `navigate` | `url` |
+| `navigate` | `url` — absolute, or a path resolved against `baseUrl` |
 | `click`, `double-click`, `hover`, `submit`, `download`, `focus`, `blur` | `target` |
 | `fill` | `target`, `values` (keys = field target names) |
 | `select` | `target`, `value` |
-| `upload` | `target`, `file` |
+| `upload` | `target`, `file` — resolved from the project root, e.g. `.flowspec/fixtures/x.pdf` |
 | `press-key` | `key` (`target` optional) |
 | `wait` | `seconds` or `target` (exactly one) |
 | `scroll` | `target` or `to: "top" \| "bottom"` |
@@ -113,6 +150,8 @@ flowspec-results/
 └── evidence/<flow-id>/<case-id>/screenshot.png
 ```
 
+When a run covers several documents, results nest per document id, mirroring the `.flowspec/` tree — `flowspec-results/admin/users/report.json` — with a run-level summary at the root.
+
 - Evidence paths in `report.json` are **relative** to the results directory, so the whole folder zips and uploads as a self-contained bundle.
 - A case's stable identity across runs is `<flow-id>/<case-id>` — use it to correlate flaky results.
 - Exit codes: `0` passed · `1` a flow failed (product bug) · `2` a flow errored or the document was invalid (broken run).
@@ -126,3 +165,5 @@ flowspec-results/
 - Negative paths (validation errors) modeled as `when: "failed"` edges, not as expected-to-fail assertions.
 - Assertion descriptions read as expectations (*"The confirmation banner appears"*), not restatements of the type (*"visible success-message"*).
 - No `description` explains *how* — if it mentions pixels, selectors, or key sequences, rewrite it as intent.
+- No environment-specific origin committed in a document — `baseUrl` belongs in `.flowspec.json` or the invocation.
+- Flows that start on different pages navigate in their own `setup`, not in a first case.

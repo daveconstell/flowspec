@@ -219,29 +219,38 @@
   &lt;/button&gt;
 &lt;/form&gt;
 
-<span class="text-zinc-500">// …or keep the attribute you already use:</span>
-<span class="text-sky-400">"targetAttribute"</span>: <span class="text-emerald-400">"data-testid"</span></code></pre>
+<span class="text-zinc-500">// .flowspec.json — project settings,</span>
+<span class="text-zinc-500">// including the attribute you already use</span>
+{
+  <span class="text-sky-400">"baseUrl"</span>: <span class="text-emerald-400">"http://localhost:5173"</span>,
+  <span class="text-sky-400">"targetAttribute"</span>: <span class="text-emerald-400">"data-testid"</span>
+}</code></pre>
           </li>
 
           <!-- 2 -->
           <li class="grid gap-6 lg:grid-cols-[3rem_1fr_1.1fr] lg:gap-8">
             <span class="grid size-10 shrink-0 place-items-center rounded-full border border-zinc-300 font-mono text-sm font-semibold dark:border-zinc-700">2</span>
             <div>
-              <h3 class="text-lg font-semibold">Write the document</h3>
+              <h3 class="text-lg font-semibold">Write the documents</h3>
               <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Create a <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>
-                file. Describe the journey as flows and cases — what the user does and what should
-                be true afterwards. Never how to click it.
+                Keep one document per page or area in
+                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>,
+                with project settings in
+                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>.
+                Describe each journey as flows and cases — what the user does and what should be
+                true afterwards. Never how to click it.
               </p>
             </div>
-            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code>{
+            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">// .flowspec/venue-landing.json</span>
+{
   <span class="text-sky-400">"spec"</span>: <span class="text-emerald-400">"1.0"</span>,
   <span class="text-sky-400">"name"</span>: <span class="text-emerald-400">"Quote requests"</span>,
-  <span class="text-sky-400">"setup"</span>: [
-    { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"navigate"</span>, <span class="text-sky-400">"url"</span>: <span class="text-emerald-400">"/birthday"</span> }
-  ],
   <span class="text-sky-400">"flows"</span>: [{
     <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"request-quote"</span>,
+    <span class="text-zinc-500">// each flow starts on its own page</span>
+    <span class="text-sky-400">"setup"</span>: [
+      { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"navigate"</span>, <span class="text-sky-400">"url"</span>: <span class="text-emerald-400">"/birthday"</span> }
+    ],
     <span class="text-sky-400">"cases"</span>: [{
       <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"submit"</span>,
       <span class="text-sky-400">"steps"</span>: [
@@ -346,6 +355,17 @@ page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
             <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
               Evidence is referenced by relative path, so the results directory zips, uploads as a
               CI artifact, or attaches to a pull request with every link intact.
+            </p>
+          </div>
+          <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+            <h3 class="font-semibold">Mirrors your sources</h3>
+            <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+              Split a large site across many documents in
+              <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">.flowspec/</code>
+              and results nest the same way, so
+              <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">admin/users.json</code>
+              reports to <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">admin/users/</code>
+              — collision-free, because file paths are.
             </p>
           </div>
           <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">

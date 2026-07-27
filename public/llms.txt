@@ -6,7 +6,8 @@ FlowSpec is to AI acceptance testing what OpenAPI is to REST APIs: a framework-i
 
 Key facts:
 
-- Documents are single JSON objects (`.flowspec.json`), current spec version 1.0.
+- Documents are single JSON objects, current spec version 1.0. A project keeps them in `.flowspec/` (one per page or area, nestable) beside an optional `.flowspec.json` config holding `baseUrl`, `targetAttribute`, and `output`. Settings resolve invocation → document → config → default.
+- A suite spans multiple pages two ways: `navigate` is an ordinary step so one journey can cross pages, and setup/cleanup exist at both document and flow level (`document setup → flow setup → cases → flow cleanup → document cleanup`) so flows can start on different pages while sharing preconditions.
 - Targets are semantic component names resolved via a data attribute — never CSS selectors or XPath. The attribute defaults to `data-constell` and is configurable per document via the top-level `targetAttribute` field, so teams already using `data-testid` or `data-qa` adopt FlowSpec without migrating markup.
 - Flows are directed acyclic graphs of cases; omitting `edges` yields an implicit linear chain. `when: "failed"` edges make negative paths (validation errors) passing tests.
 - Variables use `{{name}}` interpolation; undefined references fail at load time.

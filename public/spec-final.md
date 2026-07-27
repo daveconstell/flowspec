@@ -64,6 +64,7 @@ A FlowSpec document is a single JSON object (UTF-8). The recommended file extens
   "version": "1.0.0",
   "author": "Constell",
   "tags": ["smoke", "production"],
+  "baseUrl": "https://example.com",
   "targetAttribute": "data-constell",
   "variables": {},
   "setup": [],
@@ -81,6 +82,7 @@ A FlowSpec document is a single JSON object (UTF-8). The recommended file extens
 | `version` | string | no | Document version (semver recommended). |
 | `author` | string | no | Author or team. |
 | `tags` | string[] | no | Labels for filtering (`smoke`, `regression`, …). |
+| `baseUrl` | string | no | Origin that relative `navigate` URLs resolve against (§7.4). |
 | `targetAttribute` | string | no | HTML attribute that carries component names. Default `data-constell` (§6.1). |
 | `variables` | object | no | Reusable values (§5). |
 | `setup` | Step[] | no | Runs before **each** flow (§11). |
@@ -88,6 +90,69 @@ A FlowSpec document is a single JSON object (UTF-8). The recommended file extens
 | `evidence` | string[] | no | Default evidence for all cases (§9). |
 
 Engines **MUST** reject a document whose `spec` major version they do not support.
+
+### 3.2 Project layout
+
+A project keeps its documents in a `.flowspec/` directory alongside an optional `.flowspec.json` configuration file:
+
+```
+your-project/
+├── .flowspec.json              # project configuration (optional)
+├── .flowspec/
+│   ├── venue-landing.json      # one document per page or area
+│   ├── checkout.json
+│   ├── admin/
+│   │   └── users.json          # nesting is allowed
+│   └── fixtures/               # reserved: files used by upload steps
+│       └── floor-plan.pdf
+└── flowspec-results/           # generated output — do not commit (§14)
+```
+
+The directory holds **source only**: the documents themselves and the fixtures they reference. Generated output never goes here — results are written to a separate directory (§14) that is safe to delete, whereas `.flowspec/` is committed alongside the application it describes.
+
+- Runners **SHOULD** discover documents by globbing `.flowspec/**/*.json` when no explicit path is given, and **MUST** accept explicit paths so a single document can be run on its own.
+- A document's **id** is its path relative to `.flowspec/` without the extension — `venue-landing`, `admin/users`. Ids are unique by construction, and they key the per-document results directories of §14.2.
+- `.flowspec/fixtures/` is **reserved** and **MUST** be excluded from document discovery, so that a `.json` fixture is never mistaken for a document. Engines **MUST NOT** infer document-ness from a file's contents: a malformed document must fail loudly rather than be silently skipped as "not a document".
+- Documents inside `.flowspec/` use a plain `.json` extension. A document kept elsewhere **SHOULD** use `.flowspec.json` as a suffix (`smoke.flowspec.json`) so it is recognisable; note this is a suffix on a named file, distinct from the bare `.flowspec.json` configuration file.
+
+Nothing here is mandatory: a lone document file remains a valid, runnable FlowSpec.
+
+### 3.3 Configuration
+
+`.flowspec.json` holds what belongs to the **project and its environment** rather than to any one journey:
+
+```json
+{
+  "spec": "1.0",
+  "baseUrl": "http://localhost:5173",
+  "targetAttribute": "data-testid",
+  "include": [".flowspec/**/*.json"],
+  "output": "flowspec-results",
+  "evidence": ["screenshot", "console"]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `spec` | string | FlowSpec version the project targets. |
+| `baseUrl` | string | Origin relative `navigate` URLs resolve against (§7.4). |
+| `targetAttribute` | string | Attribute carrying component names (§6.1). |
+| `include` | string[] | Globs identifying documents. Default `[".flowspec/**/*.json"]`. |
+| `output` | string | Results directory (§14.1). Default `flowspec-results`. |
+| `evidence` | string[] | Default evidence for every case (§9). |
+
+Keeping `baseUrl` here is the point of the file: the origin differs between a laptop, CI, and staging, while the journeys do not. Committing an environment into a document couples the two; committing it into configuration — or overriding it at invocation — does not.
+
+### 3.4 Resolution order
+
+Where a setting can appear in more than one place, the **most specific wins**:
+
+```
+invocation (CLI flag, env)  →  document  →  .flowspec.json  →  spec default
+```
+
+- A document **MAY** override `baseUrl`, `targetAttribute`, and `evidence` when a particular suite genuinely differs — an admin subdomain, a legacy area with its own attribute convention.
+- Engines **MUST** apply this order and **MUST** report the effective values in the run report, so a surprising result can be traced to the setting that produced it.
 
 ---
 
@@ -206,7 +271,7 @@ A **Step** is a single user interaction. Steps run in array order.
 
 | Action | `target` | Additional fields | Description |
 |---|---|---|---|
-| `navigate` | — | `url` (string, required) | Go to a URL. Relative URLs resolve against the engine's configured base URL. |
+| `navigate` | — | `url` (string, required) | Go to a URL. Relative URLs resolve against `baseUrl` (§7.4). |
 | `click` | required | — | Click/tap the component. |
 | `double-click` | required | — | Double-click the component. |
 | `fill` | required | `values` (object, required) | Fill a form or field; see §7.2. |
@@ -214,7 +279,7 @@ A **Step** is a single user interaction. Steps run in array order.
 | `hover` | required | — | Hover over the component. |
 | `scroll` | optional | `to` (`"top"` \| `"bottom"`, default per target) | Scroll the target into view, or the page if no target. |
 | `wait` | optional | `seconds` (number) — exactly one of `seconds`/`target` | Pause, or wait for target to become visible. |
-| `upload` | required | `file` (string, required) | Attach a file by path. |
+| `upload` | required | `file` (string, required) | Attach a file by path, resolved per §7.5. |
 | `download` | required | — | Trigger and await a download from the component. |
 | `submit` | required | — | Submit the form component. |
 | `refresh` | — | — | Reload the page. |
@@ -252,6 +317,55 @@ AI-agent engines **MAY** fulfil an action through equivalent means (e.g. keyboar
 It serves two purposes: it appears in reports so a failure reads *"Dismiss the cookie banner — timed out"* rather than `click cookie-accept`, and AI engines **MAY** use it as a disambiguation hint when a target is genuinely ambiguous.
 
 Engines **MUST NOT** change target resolution (§6) based on `description`, and authors **MUST NOT** use it to describe *how* to perform the action ("scroll down 200px, then click the blue button"). A description that explains mechanics is a spec smell — the mechanics belong to the engine.
+
+### 7.4 URLs and multi-page journeys
+
+`navigate` accepts either an absolute URL or a path. Paths resolve against the document's `baseUrl`:
+
+```json
+{
+  "baseUrl": "https://example.com",
+  "setup": [ { "action": "navigate", "url": "/birthday" } ]
+}
+```
+
+- If `baseUrl` is absent, engines **MUST** require one at invocation and **MUST** reject the document at load time if neither is supplied and any `navigate` uses a relative URL.
+- Engines **MUST** allow `baseUrl` to be overridden at invocation, so the same document runs against local, staging, and production. Environment-specific origins **SHOULD NOT** be hardcoded into a committed document.
+- Absolute URLs bypass `baseUrl` entirely — use them for third-party pages (payment providers, identity providers) that a journey legitimately passes through.
+
+**A journey may span any number of pages.** `navigate` is an ordinary step, so a flow can cross pages freely, and each case can assert against whichever page it lands on:
+
+```json
+{
+  "id": "browse-then-quote",
+  "cases": [
+    {
+      "id": "open-packages",
+      "steps": [ { "action": "navigate", "url": "/packages" } ],
+      "assertions": [ { "type": "visible", "target": "package-list" } ]
+    },
+    {
+      "id": "open-venue",
+      "steps": [ { "action": "click", "target": "package-card" } ],
+      "assertions": [ { "type": "url", "expected": "/packages/", "match": "contains" } ]
+    }
+  ]
+}
+```
+
+When *different flows* start on different pages, put the navigation in each flow's own `setup` rather than in a case (§11) — arriving at the starting page is a precondition, not part of the journey being tested.
+
+### 7.5 File paths
+
+The `file` path of an `upload` step resolves against the **project root** — the directory containing `.flowspec/`, or the working directory for a standalone document:
+
+```json
+{ "action": "upload", "target": "brochure-input", "file": ".flowspec/fixtures/floor-plan.pdf" }
+```
+
+- Paths **MUST NOT** be resolved relative to the document, so a nested document (`admin/users.json`) references fixtures the same way a top-level one does, with no `../` climbing.
+- Absolute paths are permitted but **SHOULD NOT** be committed: they break on every other machine.
+- Engines **MUST** fail the step with `error` if the file does not exist, and **SHOULD** validate declared upload paths at load time so a missing fixture is caught before a browser starts.
 
 ---
 
@@ -343,6 +457,8 @@ A **Flow** is a complete user journey — *Request Quote*, *Download Brochure*, 
 | `description` | string | no | What the journey covers. |
 | `cases` | Case[] | **yes** | The flow's checkpoints. |
 | `edges` | Edge[] | no | Explicit graph structure (§10.3). |
+| `setup` | Step[] | no | Preconditions for this flow only, after document setup (§11). |
+| `cleanup` | Step[] | no | Teardown for this flow only, before document cleanup (§11). |
 
 ### 10.2 Case
 
@@ -419,19 +535,50 @@ Rendering rules for generators:
 
 ## 11. Setup and Cleanup
 
-`setup` and `cleanup` are step arrays with flow-level lifecycle:
+`setup` and `cleanup` are step arrays that establish and tear down the preconditions a flow needs. Both may be declared at two levels:
 
-- `setup` runs before **each** flow.
-- `cleanup` runs after **each** flow — including flows that failed or errored. Cleanup failures **MUST** be reported but **MUST NOT** change the flow's result.
+| Level | `setup` runs | `cleanup` runs |
+|---|---|---|
+| **Document** | before **every** flow | after **every** flow |
+| **Flow** | before that flow only, immediately after document setup | after that flow only, immediately before document cleanup |
+
+Order around each flow is therefore:
+
+```
+document setup → flow setup → cases → flow cleanup → document cleanup
+```
+
+Two levels exist because suites that span multiple pages need to share some preconditions while differing in others. Document setup holds what every flow needs — sign in, seed data, dismiss a cookie banner. Flow setup holds what only that journey needs, most often the page it starts on:
 
 ```json
 {
-  "setup":   [ { "action": "navigate", "url": "/birthday" } ],
+  "baseUrl": "https://example.com",
+  "setup": [ { "action": "navigate", "url": "/login" } ],
+
+  "flows": [
+    {
+      "id": "request-quote",
+      "setup": [ { "action": "navigate", "url": "/birthday" } ],
+      "cases": []
+    },
+    {
+      "id": "download-brochure",
+      "setup": [ { "action": "navigate", "url": "/weddings" } ],
+      "cases": []
+    }
+  ],
+
   "cleanup": [ { "action": "clear-storage" } ]
 }
 ```
 
-In addition to the built-in actions of §7, setup/cleanup may use:
+Rules:
+
+- Cleanup at both levels runs even when the flow failed or errored. Cleanup failures **MUST** be reported but **MUST NOT** change the flow's result.
+- A failing setup step at either level means the flow's preconditions were not met: its cases are `skipped` and the flow is `error`, not `failed` (§12). This keeps environment problems distinguishable from product bugs.
+- Setup and cleanup steps are not cases: they produce no assertions and no case results, only reported step outcomes and evidence (§14.1).
+
+In addition to the built-in actions of §7, setup and cleanup may use:
 
 | Action | Fields | Description |
 |---|---|---|
@@ -444,12 +591,14 @@ Flows **MUST** be independent: engines **MAY** run them in any order, and a flow
 ## 12. Execution lifecycle
 
 ```
-Load & validate document          (schema, variables, targetAttribute, graph integrity)
+Load & validate document          (schema, variables, baseUrl, targetAttribute, graph integrity)
 └─ for each flow:
-   ├─ Run setup
+   ├─ Run document setup
+   ├─ Run flow setup
    ├─ Execute cases along the graph (§10.3)
    │   └─ for each case: run steps → evaluate assertions → collect evidence
-   └─ Run cleanup
+   ├─ Run flow cleanup
+   └─ Run document cleanup
 Generate report
 ```
 
@@ -457,8 +606,8 @@ Failure semantics, in one place:
 
 | Situation | Result |
 |---|---|
-| Undefined variable, invalid schema, cyclic graph, invalid `targetAttribute` | Document rejected at load; nothing runs. |
-| Setup step fails | Flow preconditions unmet; all its cases `skipped`, flow = `error`. Cleanup still runs. |
+| Undefined variable, invalid schema, cyclic graph, invalid `targetAttribute`, relative URL with no `baseUrl` | Document rejected at load; nothing runs. |
+| Setup step fails (document or flow level) | Flow preconditions unmet; all its cases `skipped`, flow = `error`. Both cleanup levels still run. |
 | Step fails (target missing, timeout) | Remaining steps and assertions in the case are skipped; case = `error`. |
 | Assertion fails | Remaining assertions still evaluated; case = `failed`. |
 | Case fails/errors, no matching edge | Downstream cases `skipped`; flow = case's outcome. |
@@ -520,7 +669,7 @@ An execution produces a JSON report:
 
 - `status` at every level is `passed` | `failed` | `error` | `skipped`. A parent's status is the worst of its children (`error` > `failed` > `passed`; `skipped` children don't degrade a parent).
 - Durations are seconds.
-- `evidence` maps each collected artifact to a path relative to the results directory (§14.3).
+- `evidence` maps each collected artifact to a path relative to the results directory (§14.4).
 - Engines **MAY** add engine-specific fields; consumers **MUST** ignore fields they don't recognize.
 
 ### 13.1 Human-readable output
@@ -546,7 +695,7 @@ Engines write results to a single **results directory**, which **SHOULD** defaul
 ```
 flowspec-results/
 ├── report.json                              # the report defined in §13
-├── report.xml                               # optional JUnit XML (§14.4)
+├── report.xml                               # optional JUnit XML (§14.5)
 └── evidence/
     └── <flow-id>/
         ├── _setup/                          # evidence from setup steps, if any
@@ -563,9 +712,35 @@ Rules:
 - The directory **MUST** be safe to delete and regenerate: a run **MUST NOT** depend on artifacts from a previous run.
 - A run **MUST** overwrite the previous run's results rather than accumulating timestamped directories. Archiving history is CI's job, not the engine's.
 
+### 14.2 Runs covering multiple documents
+
+A large site is normally split across several documents — one per page or area. When a single run executes more than one, results **MUST** nest under a directory per document so they cannot overwrite each other:
+
+```
+flowspec-results/
+├── report.json                 # run-level summary across all documents
+├── venue-landing/              # mirrors .flowspec/venue-landing.json
+│   ├── report.json
+│   ├── report.xml
+│   └── evidence/…
+└── admin/
+    └── users/                  # mirrors .flowspec/admin/users.json
+        ├── report.json
+        ├── report.xml
+        └── evidence/…
+```
+
+- The per-document directory is the document's **id** (§3.2) — its path under `.flowspec/` without the extension. The results tree therefore mirrors the source tree, and ids cannot collide because file paths cannot.
+- For a document run from outside `.flowspec/`, the id is its filename without extension. Engines **MUST** fail the run if two such documents collide, rather than silently overwriting.
+- Each per-document `report.json` is exactly the report of §13, with evidence paths relative to *its own* document directory. A single document's results therefore have the same shape whether it ran alone or alongside others.
+- The run-level `report.json` at the root carries the aggregate `status`, `duration`, and `summary`, plus a `documents` array of `{ id, name, status, summary }`. It **MUST NOT** duplicate per-flow detail.
+- Documents are independent. A failing document **MUST NOT** prevent the others from running, and engines **MAY** execute them in parallel.
+
+For a run covering exactly one document, the nesting is omitted — the layout of §14.1 applies as written.
+
 Artifact filenames need no counters or hashes because a case is visited at most once per run — the acyclicity requirement of §10.3 guarantees `evidence/<flow-id>/<case-id>/` is collision-free.
 
-### 14.2 Artifact filenames
+### 14.3 Artifact filenames
 
 | Evidence | Filename |
 |---|---|
@@ -578,7 +753,7 @@ Artifact filenames need no counters or hashes because a case is visited at most 
 | `reasoning` | `reasoning.md` |
 | `performance` | `performance.json` |
 
-### 14.3 Path references and portability
+### 14.4 Path references and portability
 
 Evidence paths in `report.json` **MUST** be relative to the results directory:
 
@@ -590,7 +765,7 @@ Absolute paths **MUST NOT** be used. This is what makes the results directory a 
 
 Engines that upload evidence to remote storage **MAY** instead emit absolute `https:` URIs. A report **MUST NOT** mix the two styles.
 
-### 14.4 Case identity and CI integration
+### 14.5 Case identity and CI integration
 
 A case's **fully-qualified id** is `<flow-id>/<case-id>` — for example `request-quote/submit`. It is stable across runs and is the key that flake trackers and history dashboards **SHOULD** use to correlate a case with its previous results.
 
@@ -605,7 +780,7 @@ Engines **SHOULD** additionally emit JUnit XML as `report.xml`, since it is the 
 | `<error message>` | The failing step's `description` and reason |
 | `<skipped>` | Cases with status `skipped` |
 
-### 14.5 Exit codes
+### 14.6 Exit codes
 
 A conformant runner **MUST** exit with:
 
@@ -638,6 +813,7 @@ Candidate features deliberately **out of scope** for 1.0: loops, parallel execut
   "version": "1.0.0",
   "author": "Constell",
   "tags": ["smoke"],
+  "baseUrl": "https://example.com",
 
   "variables": {
     "customerName": "John Doe",
