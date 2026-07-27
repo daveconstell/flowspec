@@ -1,0 +1,19 @@
+# FlowSpec
+
+> FlowSpec is a declarative, engine-agnostic specification language for AI-driven acceptance testing. A FlowSpec document describes user journeys (Flows), checkpoints (Cases), semantic interactions (Steps), expected outcomes (Assertions), and captured artifacts (Evidence) — never browser automation. Execution engines (AI browser agents, Playwright, Selenium, mobile agents) decide how to perform the actions.
+
+FlowSpec is to AI acceptance testing what OpenAPI is to REST APIs: a framework-independent source of truth for expected behavior shared by developers, QA engineers, and AI agents.
+
+Key facts:
+
+- Documents are single JSON objects (`.flowspec.json`), current spec version 1.0.
+- Targets are semantic component names resolved via `[data-constell="name"]` — never CSS selectors or XPath.
+- Flows are directed acyclic graphs of cases; omitting `edges` yields an implicit linear chain. `when: "failed"` edges make negative paths (validation errors) passing tests.
+- Variables use `{{name}}` interpolation; undefined references fail at load time.
+- Case outcomes: passed, failed (assertion), error (step could not execute), skipped (never reached).
+- On any failure, engines must capture at least a screenshot and console log.
+
+## Docs
+
+- [Full specification](/spec-final.md): the complete FlowSpec 1.0 language specification — document format, actions, assertions, evidence, graph model, execution lifecycle, reporting.
+- [Authoring skill](/SKILL.md): a condensed skill for writing valid FlowSpec documents.

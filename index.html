@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlowSpec — declarative AI acceptance testing</title>
+    <meta
+      name="description"
+      content="FlowSpec is a declarative, engine-agnostic specification language for AI-driven acceptance testing."
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      ::selection { background: var(--color-indigo-500); color: #fff; }
+
+      /* typography for the rendered markdown (Tailwind CDN can't load the typography plugin) */
+      #spec { line-height: 1.75; }
+      #spec h1 { display: none; } /* page already has a hero title */
+      #spec h2, #spec h3, #spec h4 { font-weight: 600; letter-spacing: -0.015em; margin: 2.75rem 0 1rem; scroll-margin-top: 6rem; }
+      #spec h2 { font-size: 1.5rem; border-bottom: 1px solid var(--color-zinc-200); padding-bottom: 0.5rem; }
+      #spec h3 { font-size: 1.2rem; }
+      #spec p, #spec ul, #spec ol { margin: 1rem 0; }
+      #spec ul { padding-left: 1.4rem; list-style: disc; }
+      #spec ol { padding-left: 1.4rem; list-style: decimal; }
+      #spec li { margin: 0.35rem 0; }
+      #spec strong { font-weight: 600; }
+      #spec hr { border: 0; border-top: 1px solid var(--color-zinc-200); margin: 3rem 0; }
+      #spec table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.875rem; display: block; overflow-x: auto; }
+      #spec th, #spec td { border: 1px solid var(--color-zinc-200); padding: 0.55rem 0.8rem; text-align: left; vertical-align: top; }
+      #spec th { background: var(--color-zinc-50); font-weight: 600; }
+      #spec tr:nth-child(even) td { background: var(--color-zinc-50); }
+      #spec pre { background: var(--color-zinc-900); color: var(--color-zinc-100); border: 1px solid var(--color-zinc-800); border-radius: 0.75rem; padding: 1.1rem 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 1.5rem 0; }
+      #spec :not(pre) > code { background: var(--color-zinc-100); border: 1px solid var(--color-zinc-200); border-radius: 0.375rem; padding: 0.1rem 0.35rem; font-size: 0.85em; }
+      #spec .mermaid { display: flex; justify-content: center; margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--color-zinc-200); border-radius: 0.75rem; }
+      @media (prefers-color-scheme: dark) {
+        #spec h2, #spec hr, #spec .mermaid { border-color: var(--color-zinc-800); }
+        #spec th, #spec td { border-color: var(--color-zinc-800); }
+        #spec th { background: var(--color-zinc-900); }
+        #spec tr:nth-child(even) td { background: color-mix(in oklab, var(--color-zinc-900) 50%, transparent); }
+        #spec pre { background: var(--color-zinc-900); }
+        #spec :not(pre) > code { background: var(--color-zinc-900); border-color: var(--color-zinc-800); }
+      }
+    </style>
+  </head>
+  <body class="bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <!-- header -->
+    <header
+      class="sticky top-0 z-50 border-b border-zinc-200/60 bg-white/80 backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-950/80"
+    >
+      <nav class="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+        <a href="#" class="flex items-center gap-2 font-semibold tracking-tight">
+          <span
+            class="grid size-6 place-items-center rounded-md bg-gradient-to-br from-blue-500 to-violet-600 text-xs font-bold text-white"
+            >F</span
+          >
+          FlowSpec
+        </a>
+        <div class="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <a href="#spec" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">Specification</a>
+          <a href="/SKILL.md" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">SKILL.md</a>
+          <a href="/llms.txt" class="rounded-md px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">llms.txt</a>
+        </div>
+      </nav>
+    </header>
+
+    <!-- hero -->
+    <section class="relative overflow-hidden">
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_50%_-10%,--theme(--color-indigo-500/12),transparent)]"
+      ></div>
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,--theme(--color-zinc-500/6)_1px,transparent_1px),linear-gradient(to_bottom,--theme(--color-zinc-500/6)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(45rem_22rem_at_50%_0%,black,transparent)]"
+      ></div>
+
+      <div class="relative mx-auto grid max-w-5xl items-center gap-12 px-6 py-20 sm:py-28 lg:grid-cols-2">
+        <div>
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white/60 px-3 py-1 text-xs font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400"
+          >
+            <span class="size-1.5 rounded-full bg-emerald-500"></span>
+            Spec v1.0 · Draft
+          </span>
+          <h1 class="mt-5 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            Specs that describe the
+            <span class="bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">flow</span>,
+            not the framework.
+          </h1>
+          <p class="mt-5 max-w-md text-lg text-pretty text-zinc-600 dark:text-zinc-400">
+            FlowSpec is a declarative language for AI-driven acceptance testing. Describe user
+            journeys and expected behavior — any engine, from AI browser agents to Playwright,
+            decides how to run them.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a
+              href="/SKILL.md"
+              download
+              class="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download SKILL.md
+            </a>
+            <a
+              href="#spec"
+              class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-5 py-2.5 text-sm font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+            >
+              Read the spec
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25 12 15.75 4.5 8.25" />
+              </svg>
+            </a>
+          </div>
+          <p class="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
+            <a href="/SKILL.md" class="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-500 dark:text-zinc-300 dark:decoration-zinc-700">SKILL.md</a>
+            teaches AI agents to author valid FlowSpec documents ·
+            <a href="/llms.txt" class="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-500 dark:text-zinc-300 dark:decoration-zinc-700">llms.txt</a>
+            gives LLMs a machine-readable overview
+          </p>
+        </div>
+
+        <!-- code preview -->
+        <div class="rounded-xl border border-zinc-200 bg-zinc-900 shadow-xl shadow-zinc-950/10 dark:border-zinc-800">
+          <div class="flex items-center gap-1.5 border-b border-zinc-800 px-4 py-3">
+            <span class="size-2.5 rounded-full bg-zinc-700"></span>
+            <span class="size-2.5 rounded-full bg-zinc-700"></span>
+            <span class="size-2.5 rounded-full bg-zinc-700"></span>
+            <span class="ml-2 font-mono text-xs text-zinc-500">quote.flowspec.json</span>
+          </div>
+          <pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed text-zinc-300"><code>{
+  <span class="text-sky-400">"spec"</span>: <span class="text-emerald-400">"1.0"</span>,
+  <span class="text-sky-400">"name"</span>: <span class="text-emerald-400">"Venue Quote Flow"</span>,
+  <span class="text-sky-400">"flows"</span>: [{
+    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"request-quote"</span>,
+    <span class="text-sky-400">"cases"</span>: [{
+      <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"submit"</span>,
+      <span class="text-sky-400">"steps"</span>: [
+        { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"click"</span>, <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"quote-submit"</span> }
+      ],
+      <span class="text-sky-400">"assertions"</span>: [
+        { <span class="text-sky-400">"type"</span>: <span class="text-emerald-400">"visible"</span>, <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"success-message"</span> }
+      ]
+    }]
+  }]
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- principles -->
+    <section class="mx-auto max-w-5xl px-6 pb-8">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">Declarative</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Describe what should happen, never how it happens.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">Semantic</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Stable component names via <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">data-constell</code> — never CSS or XPath.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">Human readable</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">QA engineers read and write specs without programming knowledge.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">AI readable</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">An LLM executes a FlowSpec without additional prompting.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">Engine agnostic</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">The same document runs on AI agents, Playwright, Selenium, or mobile.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">Versioned</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Every document declares the spec version it targets.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- spec -->
+    <section class="mx-auto max-w-3xl px-6 py-16">
+      <div class="mb-10 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+        <h2 class="text-3xl font-semibold tracking-tight">The Specification</h2>
+        <p class="mt-2 text-zinc-500 dark:text-zinc-400">
+          FlowSpec Language Specification · v1.0 · Draft — also available as
+          <a href="/spec-final.md" class="underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-500 dark:decoration-zinc-700">raw markdown</a>.
+        </p>
+      </div>
+      <article id="spec"></article>
+    </section>
+
+    <!-- footer -->
+    <footer class="border-t border-zinc-200 dark:border-zinc-800">
+      <div
+        class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-zinc-500 dark:text-zinc-400"
+      >
+        <p>FlowSpec · an open specification by Constell</p>
+        <div class="flex gap-4">
+          <a href="/spec-final.md" class="hover:text-zinc-900 dark:hover:text-zinc-100">spec-final.md</a>
+          <a href="/SKILL.md" class="hover:text-zinc-900 dark:hover:text-zinc-100">SKILL.md</a>
+          <a href="/llms.txt" class="hover:text-zinc-900 dark:hover:text-zinc-100">llms.txt</a>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module">
+      import { marked } from 'https://cdn.jsdelivr.net/npm/marked@16/+esm'
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/+esm'
+
+      const spec = await (await fetch('/spec-final.md')).text()
+      const el = document.querySelector('#spec')
+      el.innerHTML = marked.parse(spec)
+
+      // turn ```mermaid fences into rendered diagrams
+      for (const code of el.querySelectorAll('code.language-mermaid')) {
+        const div = document.createElement('div')
+        div.className = 'mermaid'
+        div.textContent = code.textContent
+        code.closest('pre').replaceWith(div)
+      }
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default',
+      })
+      mermaid.run()
+    </script>
+  </body>
+</html>
