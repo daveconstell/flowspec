@@ -170,6 +170,7 @@ A **Step** is a single user interaction. Steps run in array order.
 |---|---|---|---|
 | `action` | string | **yes** | One of the built-in actions below. |
 | `target` | string | see below | Target name (§6). |
+| `description` | string | no | Intent of the step, in plain language (§7.3). |
 | `timeout` | number | no | Seconds to wait for the step to become possible. Default: engine-defined, **SHOULD** be 30. |
 | *(action-specific)* | | | Additional fields per action. |
 
@@ -212,6 +213,18 @@ AI-agent engines **MAY** fulfil an action through equivalent means (e.g. keyboar
 }
 ```
 
+### 7.3 Step description
+
+`description` states the step's **intent**, never its mechanics:
+
+```json
+{ "action": "click", "target": "cookie-accept", "description": "Dismiss the cookie banner" }
+```
+
+It serves two purposes: it appears in reports so a failure reads *"Dismiss the cookie banner — timed out"* rather than `click cookie-accept`, and AI engines **MAY** use it as a disambiguation hint when a target is genuinely ambiguous.
+
+Engines **MUST NOT** change target resolution (§6) based on `description`, and authors **MUST NOT** use it to describe *how* to perform the action ("scroll down 200px, then click the blue button"). A description that explains mechanics is a spec smell — the mechanics belong to the engine.
+
 ---
 
 ## 8. Assertions
@@ -242,7 +255,20 @@ Assertions validate expected outcomes after a case's steps complete.
 | `performance` | — | `metric` (string, e.g. `"lcp"`), `max` (number, ms) | The metric is at or below `max`. |
 | `accessibility` | optional | `standard` (string, default `"wcag2aa"`) | No violations at the given standard, scoped to target or page. |
 
-Assertions have an optional `timeout` (seconds) — the engine retries until the assertion holds or the timeout elapses (engine default **SHOULD** be 5).
+Every assertion also accepts:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `description` | string | no | The expectation in plain language, used as the failure message. |
+| `timeout` | number | no | Seconds to retry until the assertion holds. Default: engine-defined, **SHOULD** be 5. |
+
+`description` is what makes a report readable by someone who has not read the spec:
+
+```json
+{ "type": "visible", "target": "success-message", "description": "The confirmation banner appears" }
+```
+
+Engines **SHOULD** use `description` as the failure message when present, falling back to a generated one (`visible: success-message`) when absent.
 
 All assertions in a case **MUST** be evaluated even if an earlier one fails, so a report shows every failed expectation, not just the first.
 
@@ -298,6 +324,7 @@ A **Case** is a logical checkpoint within a flow: a group of steps plus the asse
 |---|---|---|---|
 | `id` | string | **yes** | Unique within the flow. |
 | `name` | string | no | Human-readable name. Defaults to `id`. |
+| `description` | string | no | What this checkpoint verifies and why. |
 | `steps` | Step[] | no | Interactions, in order. |
 | `assertions` | Assertion[] | no | Evaluated after all steps. |
 | `evidence` | string[] | no | Overrides the document default (§9). |
@@ -322,15 +349,18 @@ A flow is a directed graph: cases are the **nodes**, and `edges` define the path
 | `from` | string | **yes** | Source case `id`. |
 | `to` | string | **yes** | Destination case `id`. |
 | `when` | `"passed"` \| `"failed"` | no | Follow this edge only on the given outcome of `from`. Default: `"passed"`. |
+| `label` | string | no | Human-readable branch condition, used when rendering the graph (§10.4). |
 
 ```json
 {
   "edges": [
-    { "from": "submit", "to": "success", "when": "passed" },
-    { "from": "submit", "to": "validation-error", "when": "failed" }
+    { "from": "submit", "to": "success", "when": "passed", "label": "valid details" },
+    { "from": "submit", "to": "validation-error", "when": "failed", "label": "invalid email" }
   ]
 }
 ```
+
+`when` describes the *mechanism* (which outcome routes here); `label` describes the *meaning* (why the journey branches). Diagrams read far better with the latter.
 
 Rules:
 
@@ -347,11 +377,15 @@ Because a flow is a directed graph, tooling can render it mechanically — one M
 flowchart TD
   open-form --> fill
   fill --> submit
-  submit -->|passed| success
-  submit -->|failed| validation-error
+  submit -->|valid details| success
+  submit -->|invalid email| validation-error
 ```
 
-Generators **SHOULD** label edges with `when` values when a node has more than one outgoing edge.
+Rendering rules for generators:
+
+- Node labels **SHOULD** use each case's `name`, falling back to `id`.
+- When a node has more than one outgoing edge, generators **SHOULD** label those edges with the edge's `label`, falling back to its `when` value.
+- Single outgoing edges **SHOULD** be left unlabeled.
 
 ---
 
@@ -420,14 +454,33 @@ An execution produces a JSON report:
   "flows": [
     {
       "id": "request-quote",
+      "name": "Request Quote",
+      "description": "Visitor requests a quote.",
       "status": "passed",
       "duration": 3.1,
       "cases": [
         {
           "id": "submit",
+          "name": "Submit Quote",
+          "description": "Submits valid details and expects the confirmation panel.",
           "status": "passed",
           "duration": 1.4,
-          "assertions": [ { "type": "visible", "target": "success-message", "status": "passed" } ],
+          "steps": [
+            {
+              "action": "submit",
+              "target": "quote-form",
+              "description": "Send the quote request",
+              "status": "passed"
+            }
+          ],
+          "assertions": [
+            {
+              "type": "visible",
+              "target": "success-message",
+              "description": "The confirmation banner appears",
+              "status": "passed"
+            }
+          ],
           "evidence": { "screenshot": "artifacts/request-quote/submit.png" }
         }
       ]
@@ -440,6 +493,16 @@ An execution produces a JSON report:
 - Durations are seconds.
 - `evidence` maps each collected artifact to a path or URI.
 - Engines **MAY** add engine-specific fields; consumers **MUST** ignore fields they don't recognize.
+
+### 13.1 Human-readable output
+
+Names and descriptions exist to make this report legible, so engines **MUST** carry them through:
+
+- Every flow and case in the report **MUST** include its `name` (falling back to `id`) and its `description` when the document declares one.
+- Every reported step and assertion **MUST** include its `description` when declared.
+- A failed assertion's message **SHOULD** be its `description`, falling back to a generated one (§8).
+
+A reader who has never opened the FlowSpec document **SHOULD** be able to understand a failure from the report alone.
 
 ---
 
@@ -476,32 +539,59 @@ Candidate features deliberately **out of scope** for 1.0: loops, parallel execut
     {
       "id": "request-quote",
       "name": "Request Quote",
+      "description": "A visitor opens the quote form and submits valid details.",
       "cases": [
         {
           "id": "open-form",
+          "name": "Open Form",
+          "description": "The quote form is reachable from the landing page.",
           "steps": [
-            { "action": "click", "target": "quote-button" }
+            {
+              "action": "click",
+              "target": "quote-button",
+              "description": "Open the quote form"
+            }
           ],
           "assertions": [
-            { "type": "visible", "target": "quote-form" }
+            {
+              "type": "visible",
+              "target": "quote-form",
+              "description": "The quote form is shown"
+            }
           ]
         },
         {
           "id": "submit",
+          "name": "Submit Quote",
+          "description": "Valid details produce a confirmation and no console errors.",
           "steps": [
             {
               "action": "fill",
               "target": "quote-form",
+              "description": "Enter the visitor's contact details",
               "values": {
                 "quote-name": "{{customerName}}",
                 "quote-email": "{{email}}"
               }
             },
-            { "action": "submit", "target": "quote-form" }
+            {
+              "action": "submit",
+              "target": "quote-form",
+              "description": "Send the quote request"
+            }
           ],
           "assertions": [
-            { "type": "visible", "target": "success-message" },
-            { "type": "console", "level": "error", "max": 0 }
+            {
+              "type": "visible",
+              "target": "success-message",
+              "description": "The confirmation banner appears"
+            },
+            {
+              "type": "console",
+              "level": "error",
+              "max": 0,
+              "description": "No console errors during submission"
+            }
           ],
           "evidence": ["screenshot", "dom", "console"]
         }
