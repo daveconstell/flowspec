@@ -129,7 +129,7 @@
             <span class="size-2.5 rounded-full bg-zinc-700"></span>
             <span class="size-2.5 rounded-full bg-zinc-700"></span>
             <span class="size-2.5 rounded-full bg-zinc-700"></span>
-            <span class="ml-2 font-mono text-xs text-zinc-500">quote.flowspec.json</span>
+            <span class="ml-2 font-mono text-xs text-zinc-500">.flowspec/quote.json</span>
           </div>
           <pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed text-zinc-300"><code>{
   <span class="text-sky-400">"spec"</span>: <span class="text-emerald-400">"1.0"</span>,
@@ -305,7 +305,7 @@ page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
               </p>
             </div>
             <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500"># .github/workflows/acceptance.yml</span>
-<span class="text-sky-400">- run</span>: your-engine quote.flowspec.json
+<span class="text-sky-400">- run</span>: your-engine  <span class="text-zinc-500"># discovers .flowspec/**/*.json</span>
 
 <span class="text-sky-400">- uses</span>: actions/upload-artifact@v4
   <span class="text-sky-400">if</span>: always()

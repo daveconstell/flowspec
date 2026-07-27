@@ -1,6 +1,6 @@
 ---
 name: flowspec
-description: Author and review FlowSpec documents — declarative, engine-agnostic acceptance tests for AI-driven testing. Use when writing acceptance tests, .flowspec.json files, user-journey specs, or when the user mentions FlowSpec, flows, cases, or semantic UI testing.
+description: Author and review FlowSpec documents — declarative, engine-agnostic acceptance tests for AI-driven testing. Use when writing acceptance tests, documents in .flowspec/, the .flowspec.json project config, user-journey specs, or when the user mentions FlowSpec, flows, cases, or semantic UI testing.
 ---
 
 # Writing FlowSpec documents

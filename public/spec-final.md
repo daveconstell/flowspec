@@ -52,7 +52,7 @@ An engine that encounters an unknown action or assertion type **MUST** fail the 
 
 ## 3. Document format
 
-A FlowSpec document is a single JSON object (UTF-8). The recommended file extension is `.flowspec.json`.
+A FlowSpec document is a single JSON object (UTF-8). Documents live as plain `.json` files inside the `.flowspec/` directory (§3.2). The bare filename `.flowspec.json` is reserved for project configuration (§3.3) and is never a document.
 
 ### 3.1 Top-level structure
 
