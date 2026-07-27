@@ -18,7 +18,7 @@ Invoked as `/flowspec <args>`. Match the first word; anything else is treated as
 | `/flowspec new <page or journey>` | Author a new document into `.flowspec/<name>.json`. Bootstrap first if unconfigured. Verify or add every target in the markup (§ *Targets must exist*). |
 | `/flowspec @doc.json` (a file, no verb) | Review it against § *Review checklist*, then apply the fixes. |
 | `/flowspec review [@doc.json]` | § *Review checklist*. No file → every document in `.flowspec/`. Report findings; apply only the unambiguous fixes. |
-| `/flowspec run [@doc.json] [--url X]` | § *Running a document* — drive it with browser tooling, write results, report in exit-code terms. No file → every document in `.flowspec/`. `--url` overrides `baseUrl`. |
+| `/flowspec run [@doc.json] [--url X] [--headed]` | § *Running a document* — detect the browser tooling, drive it, write results, report in exit-code terms. No file → every document in `.flowspec/`. `--url` overrides `baseUrl`; `--headed` shows the browser. |
 | `/flowspec add <journey> @doc.json` | Add a flow or case to an existing document, matching the ids and evidence conventions already in it. |
 | `/flowspec targets [@doc.json]` | Resolve every target against the source and list the missing ones. Read-only — no edits, no browser. |
 | `/flowspec spec <topic>` | Answer from this reference (actions, assertions, edges, evidence). No files touched. |
@@ -180,7 +180,31 @@ Assertions accept optional `description` (failure message) and `timeout` (retry-
 
 ## Running a document — you are the engine
 
-There is no reference runner. Asked to *run* a FlowSpec, drive it yourself with browser tooling (Chrome DevTools MCP, Playwright) and behave like a conformant engine:
+There is no reference runner. Asked to *run* a FlowSpec, drive a browser yourself and behave like a conformant engine.
+
+### First: find the browser tooling
+
+**Check what's actually available before the first step** — never assume a tool is there, and never fake a run because none is.
+
+| Tooling | Detect by | Headed / headless |
+|---|---|---|
+| Chrome DevTools MCP | `navigate_page`, `take_snapshot`, `list_console_messages` tools available | headed by default (drives a real Chrome); server takes `--headless` |
+| Playwright MCP | `browser_navigate`, `browser_click`, `browser_snapshot` tools available | headed by default; server takes `--headless` |
+| Playwright in the project | `@playwright/test` in `package.json` | `--headed` flag, else headless |
+| Cypress in the project | `cypress` in `package.json` + `cypress.config.*` | `cypress open` headed · `cypress run` headless |
+| Puppeteer in the project | `puppeteer` in `package.json` | headless unless `headless: false` |
+
+Take the first that exists, in that order: MCP tooling drives a browser with no code to write, a project runner needs a script. Prefer whatever the project already uses when it has one — a Cypress shop gets a Cypress run.
+
+**Headless by default** — faster, and it's the CI-shaped path. Go headed when the user asks to watch, when a step needs a real profile, extension, or OS-level dialog, or when you're debugging a target that won't resolve and need to see the page. State which mode you used in the report.
+
+**Nothing available?** Say so and stop — a run you can't perform is not a passing run. Then offer the choice rather than picking for the user:
+
+- **Chrome DevTools MCP** — best fit, since FlowSpec's evidence types map onto it directly (console, network, performance, a11y tree): `claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest`
+- **Playwright MCP** — accessibility-tree driven, lighter: `claude mcp add playwright -- npx @playwright/mcp@latest`
+- **A project runner** — `npm i -D @playwright/test && npx playwright install chromium`, if the team wants the run reproducible in CI without an agent.
+
+### Then: behave like an engine
 
 - Per flow: `document setup → flow setup → cases → flow cleanup → document cleanup`. Cleanup runs even when the flow failed; a cleanup failure is reported but doesn't change the result.
 - Resolve every target as `[<targetAttribute>="name"]`. When it doesn't resolve, that's a **target error** — never substitute a CSS selector, a text match, or a best guess. Silent improvisation is how a green run hides broken markup.
@@ -189,7 +213,44 @@ There is no reference runner. Asked to *run* a FlowSpec, drive it yourself with 
 - Capture `screenshot` + `console` on any failure, plus whatever `evidence` declares.
 - Write results to the configured output in the layout below, overwriting the previous run, and report the outcome in exit-code terms: `0` passed · `1` a flow failed · `2` a flow errored or the document was invalid.
 
-Report a run the way the report reads — flow and case `name`, the failing assertion's `description` — not as a narration of clicks.
+### Finally: report the results in full
+
+Writing `report.json` is not reporting. **Every run ends with the detailed results in your reply**, whether it passed or failed — the user should never have to open a file to learn what happened. Read it back the way the report reads (flow and case `name`, the failing assertion's `description`), never as a narration of clicks.
+
+```
+venue-landing · 2 flows · 7 cases — FAILED (exit 1) · headless Chrome · 24.1s
+
+✓ request-quote — Quote requests (4 cases, 11.3s)
+    ✓ open-form         Form is reachable                          1.2s
+    ✓ fill-details      Enter the visitor's contact details         3.1s
+    ✓ submit            Send the quote request                     5.8s
+    ✓ confirm           The confirmation banner appears            1.2s
+
+✗ validate-email — Rejects a malformed address (3 cases, 12.8s)
+    ✓ open-form         Form is reachable                          1.1s
+    ✗ submit-invalid    Submitting a bad email is refused          9.4s
+        assertion 2/3 · visible · target: email-error
+        expected: The inline validation message appears
+        actual:   no element matched [data-constell="email-error"] after 5s
+        also failed: text · error-summary — expected "check the highlighted field"
+        passed:   url — still on /quote
+        console:  1 error — TypeError: v.email is undefined (quote.js:88)
+        evidence: evidence/validate-email/submit-invalid/{screenshot.png,console.log}
+    ⊘ recover           skipped — flow stopped at the first failure
+
+Results → flowspec-results/report.json
+```
+
+The shape is a guide, not a format — adapt it to the run. What must be there every time:
+
+- **A one-line verdict**: document, counts, outcome + exit code, browser mode, duration. Never bury the result.
+- **Every case, including passing ones**, under its flow, with its `name` or `description` and duration — a run that only lists failures hides what was never exercised.
+- **For each failure, enough to act without re-running**: which assertion (`n/m`, its type and target), expected vs. actual as the engine saw it, the *other* assertions in that case and how each fared (they're all evaluated), any console errors, and the relative evidence paths.
+- **`error` distinguished from `failed`**, in those words: an unresolved target or a timed-out step is a broken run, an assertion that came back false is a product bug. Say which, and for a target error name the attribute and value that found nothing so the fix is a one-line markup change.
+- **Skipped cases listed with why** — `flow stopped at the first failure`, or `precondition failed in setup`.
+- **Setup/cleanup outcomes** when either misbehaved: a failed setup makes the flow `error` and is usually the whole story; a failed cleanup is reported but changes no result.
+
+Then, at most a couple of lines on what to do next — the likely cause and the one file to look at. Not a fix applied unasked, and no green-washing: if you couldn't run a flow, say it was not run rather than folding it into the pass count.
 
 ## Where results land
 
