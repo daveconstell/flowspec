@@ -15,7 +15,7 @@
       property="og:description"
       content="FlowSpec is a declarative, engine-agnostic specification language for AI-driven acceptance testing."
     />
-    <meta property="og:image" content="/logo.png" />
+    <meta property="og:image" content="https://flowspec-omega.vercel.app/logo.png" />
     <meta name="twitter:card" content="summary" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
@@ -283,8 +283,8 @@ git clone https://github.com/daveconstell/flowspec.git
           <div class="flex flex-wrap items-baseline justify-between gap-2">
             <h3 class="text-lg font-semibold">Skill commands</h3>
             <p class="text-sm text-zinc-500 dark:text-zinc-400">
-              A file argument defaults to every document in
-              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>
+              Without a file, <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">review</code>/<code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">run</code>/<code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targets</code> cover every document in
+              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>; <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">add</code> targets the page's document
             </p>
           </div>
           <dl class="mt-5 divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
@@ -297,20 +297,16 @@ git clone https://github.com/daveconstell/flowspec.git
               <dd class="text-zinc-600 dark:text-zinc-400">Detect <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">baseUrl</code> and <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targetAttribute</code> from the repo, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>, create <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec new &lt;page or journey&gt;</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Author a document, annotating the components it needs to reach as it goes.</dd>
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec add &lt;page or journey&gt; [file]</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">The authoring command. A page: read it, ask what you want tested, author only what you choose. A journey: add it to the page's document — creating the file first if none exists — annotating the components it needs to reach as it goes.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
               <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec review [file]</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Check against the review checklist — unresolved targets, undeclared variables, mechanics leaking into descriptions — and fix what's unambiguous. Passing a document with no verb does the same.</dd>
+              <dd class="text-zinc-600 dark:text-zinc-400">Check against the review checklist — unresolved targets, undeclared variables, mechanics leaking into descriptions — and fix what's unambiguous.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
               <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec run [file] [--url X] [--headed]</dt>
               <dd class="text-zinc-600 dark:text-zinc-400">Find the browser tooling — Chrome DevTools MCP, Playwright, Cypress — drive the journey, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">flowspec-results/</code>, and report every case with expected vs. actual. Headless unless <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">--headed</code>.</dd>
-            </div>
-            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec add &lt;journey&gt; &lt;file&gt;</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Add a flow or case to an existing document, matching the ids and evidence conventions already in it.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
               <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec targets [file]</dt>
@@ -335,7 +331,9 @@ git clone https://github.com/daveconstell/flowspec.git
                 <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">data-testid</code>
                 or a house convention? Declare it as
                 <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targetAttribute</code>
-                and change no markup at all.
+                and change no markup at all. And if the configured attribute is absent from the
+                page entirely, engines detect the convention the page actually uses, run with it,
+                and flag the config mismatch — rather than failing every step.
               </p>
             </div>
             <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">&lt;!-- role, not appearance --&gt;</span>
@@ -368,7 +366,7 @@ git clone https://github.com/daveconstell/flowspec.git
                 true afterwards. Never how to click it. With the skill installed,
                 <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec init</code>
                 detects those settings from your repo and
-                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec new &lt;page&gt;</code>
+                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec add &lt;page&gt;</code>
                 drafts the document.
               </p>
             </div>
@@ -566,7 +564,7 @@ page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
       <div
         class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-zinc-500 dark:text-zinc-400"
       >
-        <p>FlowSpec · an open specification by Constell</p>
+        <p>FlowSpec · an open specification by Constell · MIT licensed</p>
         <div class="flex gap-4">
           <a href="/spec-final.md" class="hover:text-zinc-900 dark:hover:text-zinc-100">spec-final.md</a>
           <a href="/SKILL.md" class="hover:text-zinc-900 dark:hover:text-zinc-100">SKILL.md</a>

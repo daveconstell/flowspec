@@ -9,17 +9,15 @@ A FlowSpec document is a single JSON object describing user journeys, never auto
 
 ## Commands
 
-Invoked as `/flowspec <args>`. Match the first word; anything else is treated as a description of the journey to author.
+Invoked as `/flowspec <args>`. Match the first word; anything else is treated as an `add` — a page or journey to author.
 
 | Invocation | Do this |
 |---|---|
 | `/flowspec` (no args) | Report setup state (`.flowspec.json`, `.flowspec/` documents, `targetAttribute`) and this table. Change nothing. |
 | `/flowspec init` | Bootstrap: § *Before authoring*. Detect settings, write `.flowspec.json`, create `.flowspec/`, gitignore the output dir, then ask which page the first document covers. Already set up → show the config and say so, don't overwrite. |
-| `/flowspec new <page or journey>` | Author a new document into `.flowspec/<name>.json`. Bootstrap first if unconfigured. Verify or add every target in the markup (§ *Targets must exist*). |
-| `/flowspec @doc.json` (a file, no verb) | Review it against § *Review checklist*, then apply the fixes. |
 | `/flowspec review [@doc.json]` | § *Review checklist*. No file → every document in `.flowspec/`. Report findings; apply only the unambiguous fixes. |
 | `/flowspec run [@doc.json] [--url X] [--headed]` | § *Running a document* — detect the browser tooling, drive it, write results, report in exit-code terms. No file → every document in `.flowspec/`. `--url` overrides `baseUrl`; `--headed` shows the browser. |
-| `/flowspec add <journey> @doc.json` | Add a flow or case to an existing document, matching the ids and evidence conventions already in it. |
+| `/flowspec add <page or journey> [@doc.json]` | The authoring verb. A page → propose and author its coverage into `.flowspec/<name>.json` (§ *Propose before writing*). A journey → add it to the page's document, matching the ids and evidence conventions already in it (§ *Adding a journey*). No file → the document covering that page; no document at all → create it first. Bootstrap first if unconfigured. |
 | `/flowspec targets [@doc.json]` | Resolve every target against the source and list the missing ones. Read-only — no edits, no browser. |
 | `/flowspec spec <topic>` | Answer from this reference (actions, assertions, edges, evidence). No files touched. |
 
@@ -34,6 +32,38 @@ Invoked as `/flowspec <args>`. Match the first word; anything else is treated as
 | `output` | — | never — default `flowspec-results` |
 
 Then write `.flowspec.json`, create `.flowspec/`, add `flowspec-results/` to `.gitignore`, and ask which page or journey the first document should cover — one document per page or area.
+
+## Propose before writing
+
+`/flowspec add` given a page never goes straight to a written document. A page name is scope, not a list of journeys — don't invent flows or cases the user didn't ask for. Read the page's source first (route, components, forms, links, what the markup already annotates), then run the authoring conversation — three questions, each pre-answered from the source so the user corrects rather than dictates:
+
+1. **What do you want to test?** Present what the page offers as candidates, happy and sad paths alike — a validation rejection is as much a journey as a successful submit. One line each: the journey in plain words, rough case count, any targets that would need annotating. Ask which the user wants covered, and what you missed. This is the only question asked cold.
+2. **What are the steps?** For each chosen journey, derive the steps from the source — the form's fields, the button that submits — and show them as intent, not mechanics. Ask only where the source leaves the path ambiguous (two ways to reach the same outcome, an order that matters).
+3. **What are the expectations?** Derive the assertions the source supports — the banner, the redirect, the error state — and show them. Only when a journey's expected end state is genuinely invisible in the source, ask; never guess what "should" happen.
+4. **What's the setup?** — only when a chosen journey can't run without state the source shows it needs: an auth guard means asking for test credentials, a data dependency means asking how it gets seeded. The answers become `variables` + document or flow `setup`. Ask for a test account, never production credentials, and note the values land in a committed file — engines allow overriding variables at invocation for anything sensitive.
+
+Present the beats as one proposal, then author exactly what was confirmed. A chosen sad path is modeled as a `when: "failed"` edge (§ Rules 4), never as an expected-to-fail assertion. Close out the same way a journey does (§ *Adding a journey*): targets verified or annotated, the § *Review checklist* on the result, an offer to run it. Depth beyond this — more branches, more data — comes later, journey by journey.
+
+## Adding a journey: the depth questions
+
+`/flowspec add` is where a happy path becomes a real test.
+
+**First, read the document and the page source — they answer most of it:**
+
+- No `@doc.json` given → use the document covering the journey's page; ask only when several plausibly match.
+- **No document covers that page at all → create one** via § *Propose before writing*, scoped to the requested journey, then continue below. `add` never fails just because the file is missing, and never writes flows into the wrong page's document to avoid creating one.
+- An existing flow or case already substantially covers the journey → say so and extend it; never author a duplicate under a new name.
+- Where it lands is a rule, not a question: a journey that branches off an existing flow's outcome (a rejection, an alternate path) becomes cases + edges in that flow; an independent journey becomes a new flow.
+- Declared `variables`, document-level `setup`, and existing edges already answer questions below — never re-ask what the document settled when it was authored.
+
+**Then ask, in this order** — one exchange, each answer feeds the next — only what neither the source nor the document answers:
+
+1. **Outcome** — "what does success look like?" Skip when the source shows it (a redirect, a banner, a state change).
+2. **Failure branches** — list the validation, error, and empty states found in the source and ask which to model as `when: "failed"` edges. Users rarely volunteer these; they're where the valuable cases live.
+3. **Preconditions** — signed-in user, seeded data? Only when the source shows auth guards or data dependencies; the answer becomes `setup`.
+4. **Test data** — only for values a wrong guess could break: credentials, real inboxes, anything that creates records. Everything else gets dummies without asking.
+
+**Close out:** verify or add every new target in the markup (§ *Targets must exist* — sad paths usually need targets like `email-error` that the happy path never touched), check the touched flow against the § *Review checklist* (unique ids, acyclic edges, declared variables), and offer to run just that flow. Before offering, detect what browser tooling actually exists (§ *First: find the browser tooling* — Chrome DevTools MCP, Playwright MCP, project Playwright/Cypress/Puppeteer); never promise or fake a run no tooling can perform, and never author steps that only one engine could execute — the document stays engine-agnostic.
 
 ## Targets must exist in the markup
 
@@ -105,7 +135,7 @@ Within a flow, `navigate` is an ordinary step, so a single journey can cross as 
 3. **Cases run in array order** (linear chain) unless the flow declares `edges`. Execution stops at the first non-passing case; the rest are `skipped`.
 4. **Branching:** `{ "from": "submit", "to": "validation-error", "when": "failed", "label": "invalid email" }` — a `when: "failed"` edge makes the failure *expected*; if that path passes, the flow passes. `label` is what diagrams show. Graph must be acyclic.
 5. **All assertions in a case are evaluated** even after one fails. A step failure (missing target, timeout) is an `error` and skips the rest of the case.
-6. **Evidence** (`screenshot`, `dom`, `html`, `a11y-tree`, `network`, `console`, `reasoning`, `performance`): document-level default, case-level override. Screenshots + console are always captured on failure automatically — don't declare evidence just for that.
+6. **Evidence** (`screenshot`, `dom`, `html`, `a11y-tree`, `network`, `console`, `reasoning`, `performance`): document-level default, case-level override. Screenshots + console are always captured on failure, and `timing` always — don't declare evidence for those.
 7. **Describe intent, never mechanics.** `description` is optional on cases, steps, and assertions, and it becomes the failure message in reports — write it so someone who has never read the spec understands the failure. `"Dismiss the cookie banner"` ✅ · `"scroll 200px then click the blue button"` ❌ (that's the engine's job).
 
 ## Naming and describing
@@ -182,7 +212,16 @@ Assertions accept optional `description` (failure message) and `timeout` (retry-
 
 There is no reference runner. Asked to *run* a FlowSpec, drive a browser yourself and behave like a conformant engine.
 
-### First: find the browser tooling
+### First: preflight — no browser until all four pass
+
+1. **Resolve config** (invocation → document → `.flowspec.json` → default) and collect the documents to run. None found → say so and offer `init` or `add`; never author one unasked.
+2. **Load and validate every document** — schema, unique ids, declared variables, acyclic edges, `baseUrl` resolvable (spec §12: an invalid document is rejected before anything runs). Invalid → that document is exit 2; continue with the rest.
+3. **Probe `baseUrl`** with one cheap request. Unreachable → stop and ask: start the dev server, or run against a different `--url`? Never burn per-step timeouts discovering the app isn't up.
+4. **Detect the browser tooling** (next section).
+
+Several documents: run in sorted path order, independently — one bad document never blocks the rest — and the run's exit code is the worst across documents (spec §14.2).
+
+### Then: find the browser tooling
 
 **Check what's actually available before the first step** — never assume a tool is there, and never fake a run because none is.
 
@@ -194,9 +233,9 @@ There is no reference runner. Asked to *run* a FlowSpec, drive a browser yoursel
 | Cypress in the project | `cypress` in `package.json` + `cypress.config.*` | `cypress open` headed · `cypress run` headless |
 | Puppeteer in the project | `puppeteer` in `package.json` | headless unless `headless: false` |
 
-Take the first that exists, in that order: MCP tooling drives a browser with no code to write, a project runner needs a script. Prefer whatever the project already uses when it has one — a Cypress shop gets a Cypress run.
+Take the first that exists, in that order — no judgment call. Connected MCP tooling outranks a project runner even in a Cypress shop: it drives a browser with no code to write and maps directly onto FlowSpec's evidence types. With no MCP connected, the ladder lands on whatever runner the project already uses.
 
-**Headless by default** — faster, and it's the CI-shaped path. Go headed when the user asks to watch, when a step needs a real profile, extension, or OS-level dialog, or when you're debugging a target that won't resolve and need to see the page. State which mode you used in the report.
+**Headless by default** — faster, and it's the CI-shaped path. Go headed when the user asks to watch, when a step needs a real profile, extension, or OS-level dialog, or when you're debugging a target that won't resolve and need to see the page. An MCP server's mode was fixed when it was launched — when the requested mode isn't available, run in the mode you have and state the mismatch in the verdict line. Always state which mode you used in the report.
 
 **Nothing available?** Say so and stop — a run you can't perform is not a passing run. Then offer the choice rather than picking for the user:
 
@@ -208,10 +247,11 @@ Take the first that exists, in that order: MCP tooling drives a browser with no 
 
 - Per flow: `document setup → flow setup → cases → flow cleanup → document cleanup`. Cleanup runs even when the flow failed; a cleanup failure is reported but doesn't change the result.
 - Resolve every target as `[<targetAttribute>="name"]`. When it doesn't resolve, that's a **target error** — never substitute a CSS selector, a text match, or a best guess. Silent improvisation is how a green run hides broken markup.
+- One exception: when the configured attribute matches **nothing on the page at all**, the config is wrong, not the markup. Probe `data-constell`, `data-testid`, `data-qa`, `data-test` — if exactly one is present on the page, run with it, flag the mismatch as a warning in the verdict line, and suggest the one-line `.flowspec.json` fix. None or several present → target error as usual. A missing target under an attribute the page *does* use is never rescued this way.
 - Run a case's steps in order, then evaluate **all** its assertions even after one fails. A failed step is `error` and skips the rest of the case; a failed assertion is `failed`.
 - Stop the flow at the first non-passing case unless an `edges` path covers that outcome.
 - Capture `screenshot` + `console` on any failure, plus whatever `evidence` declares.
-- Write results to the configured output in the layout below, overwriting the previous run, and report the outcome in exit-code terms: `0` passed · `1` a flow failed · `2` a flow errored or the document was invalid.
+- Write results to the configured output in the layout below, overwriting the previous run. `report.json` follows spec §13 exactly — `status`/`startedAt`/`duration`, the effective `config`, `warnings` (attribute substitutions, cleanup failures), `summary`, then `flows → cases → steps + assertions` each with status and description. Don't improvise the shape. Report the outcome in exit-code terms: `0` passed · `1` a flow failed · `2` a flow errored or the document was invalid.
 
 ### Finally: report the results in full
 

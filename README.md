@@ -16,7 +16,6 @@ A FlowSpec document describes user journeys — flows, checkpoints, semantic int
 | [`public/SKILL.md`](public/SKILL.md) | A condensed skill for AI agents. Drop it into an agent's skills directory — or run `./install-skill.sh` — to author, review, and run FlowSpec documents via `/flowspec` commands. |
 | [`public/llms.txt`](public/llms.txt) | Machine-readable overview for LLMs, following the llms.txt convention. |
 | `index.html` | The documentation site — renders the spec at runtime. |
-| `spec-raw.md` | The original unrefined draft, kept for provenance. |
 
 ## Installing the skill
 
@@ -42,7 +41,7 @@ Restart the agent session, then `/flowspec` to confirm it loaded.
 
 FlowSpec is a specification, not a test runner — there is no reference implementation yet. To adopt it:
 
-1. **Annotate your UI.** Add `data-constell="component-name"` to every element a test must reach. Name by role, not appearance. Already using `data-testid` or another convention? Set `targetAttribute` instead of migrating markup.
+1. **Annotate your UI.** Add `data-constell="component-name"` to every element a test must reach. Name by role, not appearance. Already using `data-testid` or another convention? Set `targetAttribute` instead of migrating markup. If the configured attribute turns out to be absent from the page entirely, engines detect the convention the page actually uses (`data-constell`, `data-testid`, `data-qa`, `data-test`), run with it, and flag the config mismatch — instead of failing every step.
 2. **Author your documents.** Keep one per page or area in `.flowspec/`, with project settings in `.flowspec.json`:
 
    ```
@@ -62,10 +61,9 @@ FlowSpec is a specification, not a test runner — there is no reference impleme
    |---|---|
    | `/flowspec` | Report setup state and the command list |
    | `/flowspec init` | Detect `baseUrl`/`targetAttribute`, write `.flowspec.json`, create `.flowspec/` |
-   | `/flowspec new <page or journey>` | Author a document, annotating the markup as it goes |
+   | `/flowspec add <page or journey> [file]` | Author: a page → read it, ask what to test, author what's chosen; a journey → add it to the page's document, creating the file if missing |
    | `/flowspec review [file]` | Check against the review checklist and fix what's unambiguous |
-   | `/flowspec run [file] [--url X]` | Execute the journey and write `flowspec-results/` |
-   | `/flowspec add <journey> <file>` | Add a flow or case to an existing document |
+   | `/flowspec run [file] [--url X] [--headed]` | Execute the journey and write `flowspec-results/` |
    | `/flowspec targets [file]` | List targets that don't resolve in the source — read-only |
    | `/flowspec spec <topic>` | Answer a spec question — actions, assertions, edges, evidence |
 4. **Consume the results.** Conformant engines write `flowspec-results/` — `report.json`, optional JUnit `report.xml`, and evidence artifacts referenced by relative path. Multi-document runs nest per document id, mirroring the `.flowspec/` tree. Exit `0` passed, `1` failed, `2` errored.
@@ -87,4 +85,4 @@ Spec version 1.0, **draft**. The document format is stable enough to author agai
 
 ## License
 
-An open specification by Constell.
+[MIT](LICENSE) — an open specification by Constell.

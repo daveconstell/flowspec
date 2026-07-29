@@ -69,7 +69,8 @@ A FlowSpec document is a single JSON object (UTF-8). Documents live as plain `.j
   "variables": {},
   "setup": [],
   "flows": [],
-  "cleanup": []
+  "cleanup": [],
+  "evidence": ["screenshot", "console"]
 }
 ```
 
@@ -152,7 +153,7 @@ invocation (CLI flag, env)  →  document  →  .flowspec.json  →  spec defaul
 ```
 
 - A document **MAY** override `baseUrl`, `targetAttribute`, and `evidence` when a particular suite genuinely differs — an admin subdomain, a legacy area with its own attribute convention.
-- Engines **MUST** apply this order and **MUST** report the effective values in the run report, so a surprising result can be traced to the setting that produced it.
+- Engines **MUST** apply this order and **MUST** report the effective values in the run report's `config` block (§13), so a surprising result can be traced to the setting that produced it.
 
 ---
 
@@ -228,7 +229,7 @@ Rules:
 
 - Teams already using `data-testid`, `data-qa`, `data-test`, or a house convention adopt FlowSpec by declaring it — no markup migration required.
 - A custom attribute **SHOULD** be `data-*` prefixed, so it stays a valid HTML5 custom attribute.
-- Exactly one attribute applies per document. Fallback chains are deliberately excluded: two ways to name the same component is how a test suite starts drifting from its markup.
+- Exactly one attribute applies per document. Fallback chains are deliberately excluded: two ways to name the same component is how a test suite starts drifting from its markup. (Engine-side detection when the configured attribute is absent from the page entirely is a different mechanism — §6.2.)
 - Engines **MAY** allow the value to be overridden at invocation time (CLI flag, config), which takes precedence over the document. This mirrors variable overrides (§5) and lets one document run against environments whose markup differs.
 - The attribute name is meaningless to non-DOM engines (§6.2), which ignore it.
 
@@ -237,6 +238,7 @@ Rules:
 - DOM-based engines **MUST** resolve `target: "X"` to `[<targetAttribute>="X"]` — by default `[data-constell="X"]`.
 - Non-DOM engines (mobile, desktop) **MUST** map the same names onto their platform's semantic identifiers (e.g. accessibility IDs), ignoring `targetAttribute`.
 - If a target resolves to zero elements, the step or assertion referencing it fails.
+- Exception — configuration mismatch: if `[<targetAttribute>]` matches **nothing on the page at all**, the configured attribute is wrong, not the component. Engines **SHOULD** then probe the well-known conventions (`data-constell`, `data-testid`, `data-qa`, `data-test`) and, when exactly one is present on the page, resolve the document's targets against it for the rest of the run, reporting the substitution in the report's `warnings` (§13). If none or several are present, the run errors as usual. This is a whole-document correction, not a per-target fallback chain (§6.1): a missing target under an attribute the page *does* use still fails.
 - If a target resolves to multiple elements, engines **MUST** fail with an ambiguity error unless the assertion is `count` (§8), which operates on the full match set.
 
 ### 6.3 Naming convention
@@ -275,7 +277,7 @@ A **Step** is a single user interaction. Steps run in array order.
 | `click` | required | — | Click/tap the component. |
 | `double-click` | required | — | Double-click the component. |
 | `fill` | required | `values` (object, required) | Fill a form or field; see §7.2. |
-| `select` | required | `value` (string, required) | Choose an option by visible label or value. |
+| `select` | required | `value` (string, required) | Choose an option: match by visible label first, falling back to the underlying value. |
 | `hover` | required | — | Hover over the component. |
 | `scroll` | optional | `to` (`"top"` \| `"bottom"`, default per target) | Scroll the target into view, or the page if no target. |
 | `wait` | optional | `seconds` (number) — exactly one of `seconds`/`target` | Pause, or wait for target to become visible. |
@@ -393,9 +395,11 @@ Assertions validate expected outcomes after a case's steps complete.
 | `url` | — | `expected` (string, required), `match` (as `text`) | Current URL matches. |
 | `title` | — | `expected` (string, required), `match` (as `text`) | Page title matches. |
 | `console` | — | `level` (`"error"` \| `"warning"`, default `"error"`), `max` (number, default `0`) | At most `max` console entries at `level` since case start. |
-| `network` | — | `status` (`"no-errors"`), or `url` + `expected` status code | No failed requests, or a specific request returned the expected status. |
-| `performance` | — | `metric` (string, e.g. `"lcp"`), `max` (number, ms) | The metric is at or below `max`. |
+| `network` | — | `status` (`"no-errors"`), or `url` + `expected` (number — exact HTTP status code) | No failed requests, or the most recent request whose URL contains `url` returned exactly `expected`. |
+| `performance` | — | `metric` (see below), `max` (number) | The metric is at or below `max`. |
 | `accessibility` | optional | `standard` (string, default `"wcag2aa"`) | No violations at the given standard, scoped to target or page. |
+
+`performance` metrics for 1.0 are `lcp`, `fcp`, `ttfb`, `inp` (milliseconds) and `cls` (unitless score). Engines **MAY** support additional metrics, but a metric an engine does not recognise is an unknown-type error (§2) — never a silent pass.
 
 Every assertion also accepts:
 
@@ -479,6 +483,8 @@ A case's **outcome** is:
 - `failed` — steps executed but at least one assertion failed
 - `error` — a step could not be executed (target missing, timeout, unknown action)
 - `skipped` — never reached (§10.3)
+
+A case with neither steps nor assertions is valid and trivially `passed`; engines **SHOULD** note it in the report's `warnings` (§13), since an empty checkpoint usually means an unfinished document.
 
 ### 10.3 Graph model
 
@@ -574,7 +580,7 @@ Two levels exist because suites that span multiple pages need to share some prec
 
 Rules:
 
-- Cleanup at both levels runs even when the flow failed or errored. Cleanup failures **MUST** be reported but **MUST NOT** change the flow's result.
+- Cleanup at both levels runs even when the flow failed or errored. Cleanup failures **MUST** be reported in the report's `warnings` (§13) but **MUST NOT** change the flow's result.
 - A failing setup step at either level means the flow's preconditions were not met: its cases are `skipped` and the flow is `error`, not `failed` (§12). This keeps environment problems distinguishable from product bugs.
 - Setup and cleanup steps are not cases: they produce no assertions and no case results, only reported step outcomes and evidence (§14.1).
 
@@ -628,6 +634,8 @@ An execution produces a JSON report:
   "name": "Venue Landing Page",
   "startedAt": "2026-07-27T12:00:00Z",
   "duration": 7.42,
+  "config": { "baseUrl": "http://localhost:5173", "targetAttribute": "data-constell", "evidence": ["screenshot", "console"] },
+  "warnings": [],
   "summary": { "flows": 4, "cases": 18, "assertions": 91, "failed": 0, "errors": 0, "skipped": 0 },
   "flows": [
     {
@@ -668,6 +676,8 @@ An execution produces a JSON report:
 ```
 
 - `status` at every level is `passed` | `failed` | `error` | `skipped`. A parent's status is the worst of its children (`error` > `failed` > `passed`; `skipped` children don't degrade a parent).
+- `config` carries the **effective values** after resolution (§3.4) — at minimum `baseUrl` and `targetAttribute`, plus `evidence` when a default applies — so a surprising result can be traced to the setting that produced it.
+- `warnings` is an array of strings for run-level notices that change no result: a target-attribute substitution (§6.2), a cleanup failure (§11), an engine-specific degradation. Empty when there are none; engines **MUST NOT** use it for failures.
 - Durations are seconds.
 - `evidence` maps each collected artifact to a path relative to the results directory (§14.4).
 - Engines **MAY** add engine-specific fields; consumers **MUST** ignore fields they don't recognize.
