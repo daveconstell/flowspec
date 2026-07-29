@@ -71,7 +71,7 @@ Everything else gets a dummy without asking: names, addresses, lorem text, anyth
 
 | Setting | Detect from | Ask when |
 |---|---|---|
-| `targetAttribute` | grep the app source for `data-constell`, `data-testid`, `data-qa`, `data-test` — the convention already in use wins | nothing is annotated yet (propose `data-constell`), or two conventions are in genuine use |
+| `targetAttribute` | grep the app source for `data-testid`, `data-qa`, `data-test`, `data-constell` — the convention already in use wins | nothing is annotated yet (propose `data-testid`, the default), or two conventions are in genuine use |
 | `baseUrl` | dev server port in `vite.config.*`, `next.config.*`, `package.json` scripts, `docker-compose.yml` | no dev server is discoverable |
 | `output` | — | never — default `flowspec-results` |
 
@@ -272,10 +272,11 @@ Settings resolve **invocation → flow → `.flowspec.json` → spec default**. 
 {
   "spec": "1.0",
   "baseUrl": "http://localhost:5173",
-  "targetAttribute": "data-testid",
   "output": "flowspec-results"
 }
 ```
+
+`targetAttribute` is absent on purpose: it defaults to `data-testid`, so only add it for a project on `data-qa`, `data-constell`, or a house convention.
 
 ## Flow skeleton
 
@@ -307,8 +308,8 @@ Flows are independent of each other too — engines may run them in any order or
 
 ## Rules
 
-1. **Targets are semantic names** carried by a data attribute: `"target": "quote-submit"` → `[data-constell="quote-submit"]`. Never CSS or XPath. Lowercase kebab-case, named by role, stable across redesigns.
-   The attribute defaults to `data-constell`; set it in `.flowspec.json` to match an existing convention (`data-testid`, `data-qa`, …) instead of migrating markup. One attribute per flow — no fallback chains. A name matching **more than one element is an error** (except in `count`), so a target must be unique on the page — a repeated component gets indexed names (`package-card-1`) or a `count` assertion.
+1. **Targets are semantic names** carried by a data attribute: `"target": "quote-submit"` → `[data-testid="quote-submit"]`. Never CSS or XPath. Lowercase kebab-case, named by role, stable across redesigns.
+   The attribute defaults to `data-testid`, so most projects need no config at all; set it in `.flowspec.json` only to match a different convention (`data-qa`, `data-constell`, …) instead of migrating markup. One attribute per flow — no fallback chains. A name matching **more than one element is an error** (except in `count`), so a target must be unique on the page — a repeated component gets indexed names (`package-card-1`) or a `count` assertion.
 2. **Variables** interpolate with `{{name}}`. Referencing an undefined variable fails at load. They're per-flow — no cross-file scope.
 3. **A case is one path, end to end.** Its steps are the reproduction steps; crossing pages doesn't make it several cases. Array order is presentation only — **every case runs**, whatever the others did, and engines may run them in any order or in parallel.
 4. **Sad paths are ordinary cases**, expected to pass. `inactive-account` asserts the refusal appears and the user stays put; it fails only if the app lets them in. Never author a case as an expected failure — `failed` is always a verdict on the app, never on the path.
@@ -448,7 +449,7 @@ Take the first that exists, in that order — no judgment call. Connected MCP to
 - Per **case**: `setup → steps → assertions → evidence → cleanup`. Setup runs before every case, not once per flow — otherwise a case that signs in leaves the next one authenticated. Cleanup runs even when the case failed; a cleanup failure is reported but doesn't change the result.
 - **Run every case**, whatever the others did. A failing case never skips its siblings — that's the whole point of independent paths, and stopping early hides the rest of the feature.
 - Resolve every target as `[<targetAttribute>="name"]`. When it doesn't resolve, that's a **target error** — never substitute a CSS selector, a text match, or a best guess. Silent improvisation is how a green run hides broken markup.
-- One exception: when the configured attribute matches **nothing on the page at all**, the config is wrong, not the markup. Probe `data-constell`, `data-testid`, `data-qa`, `data-test` — if exactly one is present on the page, run with it, flag the mismatch as a warning in the verdict line, and suggest the one-line `.flowspec.json` fix. None or several present → target error as usual. A missing target under an attribute the page *does* use is never rescued this way.
+- One exception: when the configured attribute matches **nothing on the page at all**, the config is wrong, not the markup. Probe `data-testid`, `data-qa`, `data-test`, `data-constell` — if exactly one is present on the page, run with it, flag the mismatch as a warning in the verdict line, and suggest the one-line `.flowspec.json` fix. None or several present → target error as usual. A missing target under an attribute the page *does* use is never rescued this way.
 - Run a case's steps in order, then evaluate **all** its assertions even after one fails. A failed step is `error` and skips the rest of that case; a failed assertion is `failed`. A failed setup step makes that case `error` and its steps don't run — the other cases are still attempted.
 - Capture `screenshot` + `console` on any failure, plus whatever `evidence` declares.
 - Write results to the configured output in the layout below, overwriting the previous run. Each flow's `report.json` follows spec §13 exactly — `status`/`id`/`name`/`startedAt`/`duration`, the effective `config`, `warnings` (attribute substitutions, cleanup failures), `summary`, then `cases → steps + assertions` each with status and description. Don't improvise the shape. Report the outcome in exit-code terms: `0` passed · `1` a flow failed · `2` a flow errored or a flow file was invalid.
@@ -470,7 +471,7 @@ Writing `report.json` is not reporting. **Every run ends with the detailed resul
     ✗ malformed-email        Refuses a malformed address            4.4s
         assertion 2/3 · visible · target: email-error
         expected: The inline validation message appears
-        actual:   no element matched [data-constell="email-error"] after 5s
+        actual:   no element matched [data-testid="email-error"] after 5s
         also failed: text · error-summary — expected "check the highlighted field"
         passed:   url — still on /quote
         console:  1 error — TypeError: v.email is undefined (quote.js:88)

@@ -52,7 +52,7 @@ Restart the agent session, then `/flowspec` to confirm it loaded.
 
 FlowSpec is a specification, not a test runner — there is no reference implementation yet. To adopt it:
 
-1. **Annotate your UI.** Add `data-constell="component-name"` to every element a test must reach. Name by role, not appearance. Already using `data-testid` or another convention? Set `targetAttribute` instead of migrating markup. If the configured attribute turns out to be absent from the page entirely, engines detect the convention the page actually uses (`data-constell`, `data-testid`, `data-qa`, `data-test`), run with it, and flag the config mismatch — instead of failing every step.
+1. **Annotate your UI.** Add `data-testid="component-name"` to every element a test must reach — the default attribute, so if your project already uses it there is nothing to configure. Name by role, not appearance. On `data-qa`, `data-constell`, or a house convention? Set `targetAttribute` instead of migrating markup. If the configured attribute turns out to be absent from the page entirely, engines detect the convention the page actually uses (`data-testid`, `data-qa`, `data-test`, `data-constell`), run with it, and flag the config mismatch — instead of failing every step.
 2. **Author your flows.** One feature per file in `.flowspec/`, with project settings in `.flowspec.json`:
 
    ```

@@ -81,7 +81,7 @@ The top level **is** the flow. There is no wrapper.
   "author": "Constell",
   "tags": ["smoke", "production"],
   "baseUrl": "https://example.com",
-  "targetAttribute": "data-constell",
+  "targetAttribute": "data-qa",
   "variables": {},
   "setup": [],
   "cases": [],
@@ -100,7 +100,7 @@ The top level **is** the flow. There is no wrapper.
 | `author` | string | no | Author or team. |
 | `tags` | string[] | no | Labels for filtering (`smoke`, `regression`, …). |
 | `baseUrl` | string | no | Origin that relative `navigate` URLs resolve against (§7.4). |
-| `targetAttribute` | string | no | HTML attribute that carries component names. Default `data-constell` (§6.1). |
+| `targetAttribute` | string | no | HTML attribute that carries component names. Default `data-testid` (§6.1). |
 | `variables` | object | no | Reusable values (§5). |
 | `setup` | Step[] | no | Preconditions, run before **each** case (§11). |
 | `cleanup` | Step[] | no | Teardown, run after **each** case (§11). |
@@ -146,7 +146,7 @@ Nothing here is mandatory: a lone flow file remains a valid, runnable FlowSpec.
 {
   "spec": "1.0",
   "baseUrl": "http://localhost:5173",
-  "targetAttribute": "data-testid",
+  "targetAttribute": "data-qa",
   "include": [".flowspec/**/*.json"],
   "output": "flowspec-results",
   "evidence": ["screenshot", "console"]
@@ -157,7 +157,7 @@ Nothing here is mandatory: a lone flow file remains a valid, runnable FlowSpec.
 |---|---|---|
 | `spec` | string | FlowSpec version the project targets. |
 | `baseUrl` | string | Origin relative `navigate` URLs resolve against (§7.4). |
-| `targetAttribute` | string | Attribute carrying component names (§6.1). |
+| `targetAttribute` | string | Attribute carrying component names (§6.1). Omit it on `data-testid` — that's the default. |
 | `include` | string[] | Globs identifying flows. Default `[".flowspec/**/*.json"]`. |
 | `output` | string | Results directory (§14.1). Default `flowspec-results`. |
 | `evidence` | string[] | Default evidence for every case (§9). |
@@ -221,7 +221,7 @@ A **target** is the stable, semantic name of a UI component. Targets decouple th
 Components under test declare their name with a **target attribute**:
 
 ```html
-<button data-constell="quote-submit">Request a quote</button>
+<button data-testid="quote-submit">Request a quote</button>
 ```
 
 FlowSpec references it by name only:
@@ -232,25 +232,25 @@ FlowSpec references it by name only:
 
 ### 6.1 The target attribute
 
-The attribute name is a property of the application under test, not of the journey being described, so it normally lives in `.flowspec.json` (§3.3). A flow **MAY** declare its own:
+The default is **`data-testid`** — the convention most projects already carry — so the common case needs no configuration at all. A project on a different convention states it once in `.flowspec.json` (§3.3), since the attribute is a property of the application under test rather than of the journey being described. A flow **MAY** override it:
 
 ```json
 {
   "spec": "1.0",
   "name": "Request Quote",
-  "targetAttribute": "data-testid"
+  "targetAttribute": "data-qa"
 }
 ```
 
 | | |
 |---|---|
 | **Field** | `targetAttribute` (string, optional) |
-| **Default** | `data-constell` |
+| **Default** | `data-testid` |
 | **Constraint** | **MUST** be a valid HTML attribute name matching `^[A-Za-z][A-Za-z0-9_.:-]*$`. Engines **MUST** reject an invalid value at load time. |
 
 Rules:
 
-- Teams already using `data-testid`, `data-qa`, `data-test`, or a house convention adopt FlowSpec by declaring it — no markup migration required.
+- A project already annotated with `data-testid` adopts FlowSpec with no configuration and no markup change. One on `data-qa`, `data-test`, or a house convention declares it instead of migrating markup.
 - A custom attribute **SHOULD** be `data-*` prefixed, so it stays a valid HTML5 custom attribute.
 - Exactly one attribute applies per flow. Fallback chains are deliberately excluded: two ways to name the same component is how a test suite starts drifting from its markup. (Engine-side detection when the configured attribute is absent from the page entirely is a different mechanism — §6.2.)
 - Engines **MAY** allow the value to be overridden at invocation time (CLI flag, config), which takes precedence over the document. This mirrors variable overrides (§5) and lets one flow run against environments whose markup differs.
@@ -258,10 +258,10 @@ Rules:
 
 ### 6.2 Resolution
 
-- DOM-based engines **MUST** resolve `target: "X"` to `[<targetAttribute>="X"]` — by default `[data-constell="X"]`.
+- DOM-based engines **MUST** resolve `target: "X"` to `[<targetAttribute>="X"]` — by default `[data-testid="X"]`.
 - Non-DOM engines (mobile, desktop) **MUST** map the same names onto their platform's semantic identifiers (e.g. accessibility IDs), ignoring `targetAttribute`.
 - If a target resolves to zero elements, the step or assertion referencing it fails.
-- Exception — configuration mismatch: if `[<targetAttribute>]` matches **nothing on the page at all**, the configured attribute is wrong, not the component. Engines **SHOULD** then probe the well-known conventions (`data-constell`, `data-testid`, `data-qa`, `data-test`) and, when exactly one is present on the page, resolve the flow's targets against it for the rest of the run, reporting the substitution in the report's `warnings` (§13). If none or several are present, the run errors as usual. This is a whole-flow correction, not a per-target fallback chain (§6.1): a missing target under an attribute the page *does* use still fails.
+- Exception — configuration mismatch: if `[<targetAttribute>]` matches **nothing on the page at all**, the configured attribute is wrong, not the component. Engines **SHOULD** then probe the well-known conventions (`data-testid`, `data-qa`, `data-test`, `data-constell`) and, when exactly one is present on the page, resolve the flow's targets against it for the rest of the run, reporting the substitution in the report's `warnings` (§13). If none or several are present, the run errors as usual. This is a whole-flow correction, not a per-target fallback chain (§6.1): a missing target under an attribute the page *does* use still fails.
 - If a target resolves to multiple elements, engines **MUST** fail with an ambiguity error unless the assertion is `count` (§8), which operates on the full match set.
 
 ### 6.3 Naming convention
@@ -630,7 +630,7 @@ Executing a flow produces a JSON report. Its top level is the flow, mirroring th
   "description": "How a user signs in, and how signing in is refused.",
   "startedAt": "2026-07-27T12:00:00Z",
   "duration": 7.42,
-  "config": { "baseUrl": "http://localhost:5173", "targetAttribute": "data-constell", "evidence": ["screenshot", "console"] },
+  "config": { "baseUrl": "http://localhost:5173", "targetAttribute": "data-testid", "evidence": ["screenshot", "console"] },
   "warnings": [],
   "summary": { "cases": 3, "assertions": 8, "passed": 3, "failed": 0, "errors": 0 },
   "cases": [
