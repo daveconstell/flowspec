@@ -50,12 +50,8 @@
       #spec tr:nth-child(even) td { background: var(--color-zinc-50); }
       #spec pre { background: var(--color-zinc-900); color: var(--color-zinc-100); border: 1px solid var(--color-zinc-800); border-radius: 0.75rem; padding: 1.1rem 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 1.5rem 0; }
       #spec :not(pre) > code { background: var(--color-zinc-100); border: 1px solid var(--color-zinc-200); border-radius: 0.375rem; padding: 0.1rem 0.35rem; font-size: 0.85em; }
-      #spec .mermaid { display: flex; justify-content: center; margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--color-zinc-200); border-radius: 0.75rem; overflow-x: auto; }
-      /* mermaid emits an SVG with a fixed width — let it shrink on a phone
-         rather than widening the whole document */
-      #spec .mermaid svg { max-width: 100%; height: auto; }
       @media (prefers-color-scheme: dark) {
-        #spec h2, #spec hr, #spec .mermaid { border-color: var(--color-zinc-800); }
+        #spec h2, #spec hr { border-color: var(--color-zinc-800); }
         #spec th, #spec td { border-color: var(--color-zinc-800); }
         #spec th { background: var(--color-zinc-900); }
         #spec tr:nth-child(even) td { background: color-mix(in oklab, var(--color-zinc-900) 50%, transparent); }
@@ -147,9 +143,9 @@
             not the framework.
           </h1>
           <p class="mt-5 max-w-md text-lg text-pretty text-zinc-600 dark:text-zinc-400">
-            FlowSpec is a declarative language for AI-driven acceptance testing. Describe user
-            journeys and expected behavior — any engine, from AI browser agents to Playwright,
-            decides how to run them.
+            FlowSpec is a declarative language for AI-driven acceptance testing. One file per
+            feature, one case per path through it — happy and sad alike. Any engine, from AI
+            browser agents to Playwright, decides how to run them.
           </p>
           <div class="mt-8 flex flex-wrap gap-3">
             <a
@@ -174,7 +170,7 @@
           </div>
           <p class="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
             <a href="/SKILL.md" class="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-500 dark:text-zinc-300 dark:decoration-zinc-700">SKILL.md</a>
-            teaches AI agents to author, review, and run FlowSpec documents ·
+            teaches AI agents to author, review, and run FlowSpec flows ·
             <a href="/llms.txt" class="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-500 dark:text-zinc-300 dark:decoration-zinc-700">llms.txt</a>
             gives LLMs a machine-readable overview
           </p>
@@ -186,23 +182,26 @@
             <span class="size-2.5 rounded-full bg-zinc-700"></span>
             <span class="size-2.5 rounded-full bg-zinc-700"></span>
             <span class="size-2.5 rounded-full bg-zinc-700"></span>
-            <span class="ml-2 font-mono text-xs text-zinc-500">.flowspec/quote.json</span>
+            <span class="ml-2 font-mono text-xs text-zinc-500">.flowspec/login_flow.json</span>
           </div>
           <pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed text-zinc-300"><code>{
   <span class="text-sky-400">"spec"</span>: <span class="text-emerald-400">"1.0"</span>,
-  <span class="text-sky-400">"name"</span>: <span class="text-emerald-400">"Venue Quote Flow"</span>,
-  <span class="text-sky-400">"flows"</span>: [{
-    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"request-quote"</span>,
-    <span class="text-sky-400">"cases"</span>: [{
-      <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"submit"</span>,
-      <span class="text-sky-400">"steps"</span>: [
-        { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"click"</span>, <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"quote-submit"</span> }
-      ],
-      <span class="text-sky-400">"assertions"</span>: [
-        { <span class="text-sky-400">"type"</span>: <span class="text-emerald-400">"visible"</span>, <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"success-message"</span> }
-      ]
-    }]
-  }]
+  <span class="text-sky-400">"name"</span>: <span class="text-emerald-400">"Login"</span>,
+  <span class="text-zinc-500">// runs before every case</span>
+  <span class="text-sky-400">"setup"</span>: [
+    { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"navigate"</span>, <span class="text-sky-400">"url"</span>: <span class="text-emerald-400">"/login"</span> }
+  ],
+  <span class="text-zinc-500">// one case per path — all expected to pass</span>
+  <span class="text-sky-400">"cases"</span>: [{
+    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"inactive-account"</span>,
+    <span class="text-sky-400">"steps"</span>: [
+      { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"click"</span>, <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"login-submit"</span> }
+    ],
+    <span class="text-sky-400">"assertions"</span>: [
+      { <span class="text-sky-400">"type"</span>: <span class="text-emerald-400">"text"</span>, <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"login-error"</span>,
+        <span class="text-sky-400">"expected"</span>: <span class="text-emerald-400">"account is not active"</span> }
+    ]
+  }, <span class="text-zinc-500">/* valid-credentials, … */</span>]
 }</code></pre>
         </div>
       </div>
@@ -216,24 +215,24 @@
           <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Describe what should happen, never how it happens.</p>
         </div>
         <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">One flow per file</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">A file is a feature journey. No container layer, no nesting to navigate.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h3 class="font-semibold">Cases are paths</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Independent scenarios through the flow — and every one, sad paths included, is expected to pass.</p>
+        </div>
+        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
           <h3 class="font-semibold">Semantic</h3>
           <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Stable component names via a data attribute you choose — never CSS or XPath.</p>
         </div>
         <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-          <h3 class="font-semibold">Human readable</h3>
-          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">QA engineers read and write specs without programming knowledge.</p>
-        </div>
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-          <h3 class="font-semibold">AI readable</h3>
-          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">An LLM executes a FlowSpec without additional prompting.</p>
+          <h3 class="font-semibold">Readable by both</h3>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">A QA engineer writes one without programming; an LLM runs one without prompting.</p>
         </div>
         <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
           <h3 class="font-semibold">Engine agnostic</h3>
-          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">The same document runs on AI agents, Playwright, Selenium, or mobile.</p>
-        </div>
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-          <h3 class="font-semibold">Versioned</h3>
-          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">Every document declares the spec version it targets.</p>
+          <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">The same flow runs on AI agents, Playwright, Selenium, or mobile.</p>
         </div>
       </div>
     </section>
@@ -247,9 +246,9 @@
             Four steps to your first flow
           </h2>
           <p class="mt-4 text-pretty text-zinc-600 dark:text-zinc-400">
-            FlowSpec is a specification, not a test runner. You annotate your UI, author a
-            document, and point an execution engine at it — the engine decides how to drive the
-            browser.
+            FlowSpec is a specification, not a test runner. You annotate your UI, author a flow
+            file per journey, and point an execution engine at it — the engine decides how to
+            drive the browser.
           </p>
         </div>
 
@@ -283,40 +282,101 @@ git clone https://github.com/daveconstell/flowspec.git
           <div class="flex flex-wrap items-baseline justify-between gap-2">
             <h3 class="text-lg font-semibold">Skill commands</h3>
             <p class="text-sm text-zinc-500 dark:text-zinc-400">
-              Without a file, <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">review</code>/<code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">run</code>/<code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targets</code> cover every document in
-              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>; <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">add</code> targets the page's document
+              Eight commands. Anything else — including no args — prints
+              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">help</code>
             </p>
           </div>
           <dl class="mt-5 divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Report the setup state — config, documents, target attribute — and the command list. Changes nothing.</dd>
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec help</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">The command list plus the setup state — config, the flows you have, the effective target attribute, and whether any testing tooling is actually connected. Changes nothing.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
               <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec init</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Detect <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">baseUrl</code> and <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targetAttribute</code> from the repo, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>, create <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>.</dd>
+              <dd class="text-zinc-600 dark:text-zinc-400">Detect <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">baseUrl</code> and <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">targetAttribute</code> from the repo, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>, create <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>. Doesn't author a flow — which feature comes first is your call.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec add &lt;page or journey&gt; [file]</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">The authoring command. A page: read it, ask what you want tested, author only what you choose. A journey: add it to the page's document — creating the file first if none exists — annotating the components it needs to reach as it goes.</dd>
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec run [file] [case]</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Find the browser tooling — Chrome DevTools MCP, Playwright, Cypress — drive the paths, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">flowspec-results/</code>, and report every case with expected vs. actual. No file runs everything; naming a case runs just that one. <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">--url</code> overrides the origin, headless unless <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">--headed</code>.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec review [file]</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Check against the review checklist — unresolved targets, undeclared variables, mechanics leaking into descriptions — and fix what's unambiguous.</dd>
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec flow:new</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Create a flow. Proposes the paths the feature offers — the refusals included — asks which you want, then walks each one with you in the browser (or derives it from the source) and writes them as cases in one <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">_flow.json</code>, annotating components as it goes.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec run [file] [--url X] [--headed]</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Find the browser tooling — Chrome DevTools MCP, Playwright, Cypress — drive the journey, write <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">flowspec-results/</code>, and report every case with expected vs. actual. Headless unless <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">--headed</code>.</dd>
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec flow:set</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Update a flow's own fields — name, description, variables, setup, cleanup. Editing setup touches every case in the file, so it says which and confirms first.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec targets [file]</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Resolve every target against the source and list the ones that match nothing. Read-only — no edits, no browser.</dd>
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec case:new</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Add a path to a flow — and it <em>always</em> asks which flow first, even when only one exists. A case in the wrong file tests the wrong feature under the wrong setup. Then it walks the path with you in the browser, or derives it from the source.</dd>
             </div>
             <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
-              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec spec &lt;topic&gt;</dt>
-              <dd class="text-zinc-600 dark:text-zinc-400">Answer a spec question — actions, assertions, edges, evidence — without touching a file.</dd>
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec case:set</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Update a case. Asks which flow, then which case, then says what it's changing before touching it — and never relaxes an assertion just to make a run go green.</dd>
+            </div>
+            <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,20rem)_1fr] sm:gap-6">
+              <dt class="font-mono text-[13px] text-indigo-600 dark:text-indigo-400">/flowspec mermaid [file]</dt>
+              <dd class="text-zinc-600 dark:text-zinc-400">Render a flow as a diagram, derived from the file: one shared setup, one branch per case, one outcome each. A fan, not a chain — nothing connects two cases, because nothing does.</dd>
             </div>
           </dl>
+          <p class="mt-5 border-t border-zinc-200 pt-4 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+            <span class="font-medium text-zinc-900 dark:text-zinc-100">Two standing guards.</span>
+            Nothing claims to run without browser tooling actually connected — a run that can't happen
+            is never reported as a pass. And any precondition, credential, or seeded record a flow
+            needs is <em>asked for</em>, never invented or left as a placeholder.
+          </p>
+        </div>
+
+        <!-- interactive authoring -->
+        <div class="mt-6 grid gap-6 rounded-xl border border-zinc-200 bg-white p-6 lg:grid-cols-[1fr_1.1fr] lg:gap-8 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div>
+            <h3 class="text-lg font-semibold">Or walk the path together</h3>
+            <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              With a browser MCP connected and the app up,
+              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">flow:new</code>
+              and
+              <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">case:new</code>
+              don't guess from the source — they drive the real thing. The agent runs the flow's
+              setup, tells you where it landed and which components it can reach <em>by name</em>,
+              and asks what the user does next. Each plain answer becomes one step, executed for
+              real.
+            </p>
+            <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+              At the end it asks the acceptance criteria — those become the assertions. You never
+              see a selector and never write JSON.
+            </p>
+            <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+              It won't record what it can't replay: use a control with no target attribute and the
+              walk stops to name it first. That's the difference between this and a click recorder —
+              what comes out is a portable FlowSpec any engine can run, not a script bound to
+              today's markup.
+            </p>
+          </div>
+          <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">setup ran → you're on /login (signed out)</span>
+<span class="text-zinc-500">Reachable: login-form, login-email,</span>
+<span class="text-zinc-500">  login-password, login-submit</span>
+<span class="text-zinc-500">Not annotated: the "Forgot password?" link</span>
+
+<span class="text-sky-400">What does the user do here?</span>
+<span class="text-emerald-400">&gt; a dormant account's email, right</span>
+<span class="text-emerald-400">  password, then sign in</span>
+
+<span class="text-zinc-500">→ fill login-form { … }</span>
+<span class="text-zinc-500">→ click login-submit</span>
+<span class="text-zinc-500">Still on /login · login-error appeared:</span>
+<span class="text-zinc-500">  "This account is not active." · 0 errors</span>
+
+<span class="text-sky-400">What's next?</span>
+<span class="text-emerald-400">&gt; nothing, that's it</span>
+
+<span class="text-sky-400">What must be true for this to pass?</span>
+<span class="text-zinc-500">  I can see: still on /login,</span>
+<span class="text-zinc-500">  login-error reads "not active"</span>
+<span class="text-emerald-400">&gt; and it never reaches the dashboard</span>
+
+<span class="text-zinc-500">→ case</span> <span class="text-emerald-400">inactive-account</span>
+<span class="text-zinc-500">  "Refuses an inactive account"</span></code></pre>
         </div>
 
         <ol class="mt-12 space-y-10">
@@ -356,42 +416,57 @@ git clone https://github.com/daveconstell/flowspec.git
           <li class="grid gap-6 lg:grid-cols-[3rem_1fr_1.1fr] lg:gap-8">
             <span class="grid size-10 shrink-0 place-items-center rounded-full border border-zinc-300 font-mono text-sm font-semibold dark:border-zinc-700">2</span>
             <div>
-              <h3 class="text-lg font-semibold">Write the documents</h3>
+              <h3 class="text-lg font-semibold">Write the flows</h3>
               <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Keep one document per page or area in
+                One feature per file in
                 <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec/</code>,
                 with project settings in
                 <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">.flowspec.json</code>.
-                Describe each journey as flows and cases — what the user does and what should be
-                true afterwards. Never how to click it. With the skill installed,
+                The file <em>is</em> the flow, so there's no wrapper to write and its name is its
+                id. Inside it, one case per path a user can take — the steps that reproduce the
+                path, then what must be true at the end of it. Never how to click it. With the
+                skill installed,
                 <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec init</code>
                 detects those settings from your repo and
-                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec add &lt;page&gt;</code>
-                drafts the document.
+                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">/flowspec flow:new</code>
+                drafts one, a case per path.
+              </p>
+              <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                Cases are siblings, not a chain: each starts from the state
+                <code class="rounded bg-zinc-200/70 px-1 py-0.5 text-xs dark:bg-zinc-800">setup</code>
+                establishes, all of them run, and a sad path <em>passes</em> by asserting the
+                refusal shows up.
               </p>
             </div>
-            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">// .flowspec/venue-landing.json</span>
+            <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">// .flowspec/login_flow.json</span>
 {
   <span class="text-sky-400">"spec"</span>: <span class="text-emerald-400">"1.0"</span>,
-  <span class="text-sky-400">"name"</span>: <span class="text-emerald-400">"Quote requests"</span>,
-  <span class="text-sky-400">"flows"</span>: [{
-    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"request-quote"</span>,
-    <span class="text-zinc-500">// each flow starts on its own page</span>
-    <span class="text-sky-400">"setup"</span>: [
-      { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"navigate"</span>, <span class="text-sky-400">"url"</span>: <span class="text-emerald-400">"/birthday"</span> }
+  <span class="text-sky-400">"name"</span>: <span class="text-emerald-400">"Login"</span>,
+  <span class="text-zinc-500">// runs before each case, so paths</span>
+  <span class="text-zinc-500">// can't contaminate each other</span>
+  <span class="text-sky-400">"setup"</span>: [
+    { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"clear-storage"</span> },
+    { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"navigate"</span>, <span class="text-sky-400">"url"</span>: <span class="text-emerald-400">"/login"</span> }
+  ],
+  <span class="text-sky-400">"cases"</span>: [{
+    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"valid-credentials"</span>, <span class="text-zinc-500">/* … */</span>
+  }, {
+    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"inactive-account"</span>,
+    <span class="text-sky-400">"steps"</span>: [
+      { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"fill"</span>,
+        <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"login-form"</span>,
+        <span class="text-sky-400">"values"</span>: { <span class="text-sky-400">"login-email"</span>: <span class="text-emerald-400">"{{dormant}}"</span> } },
+      { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"click"</span>,
+        <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"login-submit"</span> }
     ],
-    <span class="text-sky-400">"cases"</span>: [{
-      <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"submit"</span>,
-      <span class="text-sky-400">"steps"</span>: [
-        { <span class="text-sky-400">"action"</span>: <span class="text-emerald-400">"click"</span>,
-          <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"quote-submit"</span> }
-      ],
-      <span class="text-sky-400">"assertions"</span>: [
-        { <span class="text-sky-400">"type"</span>: <span class="text-emerald-400">"visible"</span>,
-          <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"success-message"</span>,
-          <span class="text-sky-400">"description"</span>: <span class="text-emerald-400">"Confirmation shows"</span> }
-      ]
-    }]
+    <span class="text-sky-400">"assertions"</span>: [
+      { <span class="text-sky-400">"type"</span>: <span class="text-emerald-400">"text"</span>,
+        <span class="text-sky-400">"target"</span>: <span class="text-emerald-400">"login-error"</span>,
+        <span class="text-sky-400">"expected"</span>: <span class="text-emerald-400">"account is not active"</span>,
+        <span class="text-sky-400">"description"</span>: <span class="text-emerald-400">"Explains why"</span> }
+    ]
+  }, {
+    <span class="text-sky-400">"id"</span>: <span class="text-emerald-400">"invalid-credentials"</span>, <span class="text-zinc-500">/* … */</span>
   }]
 }</code></pre>
           </li>
@@ -405,14 +480,14 @@ git clone https://github.com/daveconstell/flowspec.git
                 There is no official runner yet — FlowSpec 1.0 defines the contract, and engines
                 implement it. Give an AI coding agent the
                 <a href="/SKILL.md" class="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 dark:text-zinc-300 dark:decoration-zinc-600">SKILL.md</a>
-                and your document and it can execute the journey directly — installed as a skill it
+                and your flow file and it can execute the journey directly — installed as a skill it
                 answers to <code class="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[13px] dark:bg-zinc-900">/flowspec run</code> — or write a thin adapter
                 that maps actions onto Playwright.
               </p>
             </div>
             <pre class="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-900 p-4 font-mono text-[13px] leading-relaxed text-zinc-300 dark:border-zinc-800"><code><span class="text-zinc-500">// a Playwright adapter is ~40 lines:</span>
 <span class="text-zinc-500">// resolve the target…</span>
-<span class="text-violet-400">const</span> attr = doc.targetAttribute ?? <span class="text-emerald-400">'data-constell'</span>
+<span class="text-violet-400">const</span> attr = flow.targetAttribute ?? <span class="text-emerald-400">'data-constell'</span>
 page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
 
 <span class="text-zinc-500"># …then dispatch on the action</span>
@@ -468,11 +543,12 @@ page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
             flowspec-results/
           </div>
           <pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed text-zinc-300"><code>flowspec-results/
-├── <span class="text-sky-400">report.json</span>        <span class="text-zinc-500"># the full result tree</span>
-├── <span class="text-sky-400">report.xml</span>         <span class="text-zinc-500"># optional JUnit, for CI</span>
-└── evidence/
-    └── request-quote/
-        └── submit/
+├── <span class="text-sky-400">report.json</span>            <span class="text-zinc-500"># run summary</span>
+└── login_flow/            <span class="text-zinc-500"># one dir per flow</span>
+    ├── <span class="text-sky-400">report.json</span>        <span class="text-zinc-500"># flow → cases</span>
+    ├── <span class="text-sky-400">report.xml</span>         <span class="text-zinc-500"># optional JUnit, for CI</span>
+    └── evidence/
+        └── inactive-account/
             ├── <span class="text-emerald-400">screenshot.png</span>
             ├── <span class="text-emerald-400">dom.html</span>
             └── <span class="text-emerald-400">console.log</span></code></pre>
@@ -490,11 +566,9 @@ page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
           <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
             <h3 class="font-semibold">Mirrors your sources</h3>
             <p class="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
-              Split a large site across many documents in
-              <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">.flowspec/</code>
-              and results nest the same way, so
-              <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">admin/users.json</code>
-              reports to <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">admin/users/</code>
+              A flow's id is its filename, and results nest the same way, so
+              <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">.flowspec/admin/invite_user_flow.json</code>
+              reports to <code class="rounded bg-zinc-100 px-1 py-0.5 text-xs dark:bg-zinc-900">admin/invite_user_flow/</code>
               — collision-free, because file paths are.
             </p>
           </div>
@@ -541,7 +615,7 @@ page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
             <span class="font-mono text-sm font-semibold">exit 2</span>
           </div>
           <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            A flow errored or the document was invalid — a broken run.
+            A flow errored or a flow file was invalid — a broken run.
           </p>
         </div>
       </div>
@@ -584,24 +658,9 @@ page.locator(<span class="text-emerald-400">`[${attr}="${step.target}"]`</span>)
 
     <script type="module">
       import { marked } from 'https://cdn.jsdelivr.net/npm/marked@16/+esm'
-      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/+esm'
 
       const spec = await (await fetch('/spec-final.md')).text()
-      const el = document.querySelector('#spec')
-      el.innerHTML = marked.parse(spec)
-
-      // turn ```mermaid fences into rendered diagrams
-      for (const code of el.querySelectorAll('code.language-mermaid')) {
-        const div = document.createElement('div')
-        div.className = 'mermaid'
-        div.textContent = code.textContent
-        code.closest('pre').replaceWith(div)
-      }
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default',
-      })
-      mermaid.run()
+      document.querySelector('#spec').innerHTML = marked.parse(spec)
     </script>
   </body>
 </html>
